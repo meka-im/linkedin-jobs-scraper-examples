@@ -4,6 +4,8 @@ Use [`discovery-metadata.json`](discovery-metadata.json) as the maintained sourc
 
 ## GitHub About
 
+Homepage: `https://meka.im/tools/linkedin-jobs`.
+
 Description:
 
 > LinkedIn Jobs Scraper and daily n8n job monitor. Save matching jobs to Google Sheets, skip duplicates, and preserve first-seen history. By MEKA on Apify.
@@ -15,6 +17,11 @@ Topics:
 - `google-sheets`
 - `job-monitoring`
 - `apify`
+
+Keep the GitHub About homepage synchronized with `homepage` in
+[`discovery-metadata.json`](discovery-metadata.json) and the product-page links
+in the root README. The homepage should point to the LinkedIn Jobs product page,
+not the GitHub repository.
 
 ## n8n Template
 

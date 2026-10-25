@@ -2,6 +2,12 @@
 
 This page records how the example was validated and how to maintain evidence for future workflow changes. The current one-command, live API, Docker lifecycle, and Cloud two-run results are in [`validation/2026-10-25/one-command-acceptance.json`](../validation/2026-10-25/one-command-acceptance.json). The earlier local n8n measurements remain in [`validation/2026-10-25/n8n-sheets-acceptance.json`](../validation/2026-10-25/n8n-sheets-acceptance.json).
 
+## Historical Release Check Snapshot (2026-10-25)
+
+On 2026-10-25, the fixed Node.js 22 suite passed **70 Node.js tests and 4 Python tests (74 total)**, including structural checks for the template submission variant. An `npm pack` artifact contained **8 files**, and its CLI loaded successfully with an empty npm cache from a new working directory whose path contained spaces. The same packed CLI completed the live 10-result API demo with 10 unique jobs, `coverage: "complete"`, all failed-job/search/company counters at zero, and `stoppedByBudget: false`. The packed local n8n path also passed first startup, reuse of the running container, and restart of a stopped container from a fresh empty npm cache. These are acceptance results for one release snapshot, not latency or market-coverage promises.
+
+On n8n Cloud 2.45.3 Experimental, two Manual Trigger executions also completed with the schedule inactive and Execution Logic set to `v1` (recommended). Both runs used the unchanged public workflow, completed with `coverage: "complete"`, reported zero failed searches, failed job details, and failed companies, and did not stop by budget. The real sheet moved from 0 to 10 to 11 rows, with 11 unique IDs and no duplicates. The two Manual Trigger runs used the instance's default timezone; after those runs, the private workflow's Settings timezone was explicitly changed to `Etc/UTC`, saved, reopened, and confirmed while the schedule remained inactive. See [the current acceptance measurements](../validation/2026-10-25/one-command-acceptance.json).
+
 The current branch's offline suite passed **70 Node.js tests and 4 Python tests (74 total)** under Node.js `v22.22.0`. The additional four Node.js tests verify the template submission variant's title and sticky copy, executable graph, reproducible build, and absence of embedded private data. This test update does not create another live Actor, n8n Cloud, or Google Sheets execution.
 
 ## Historical Local n8n Snapshot
@@ -15,7 +21,7 @@ The current branch's offline suite passed **70 Node.js tests and 4 Python tests 
 
 The two runs used the same exported workflow and two distinct, live Actor runs. Neither run was a replay or stub.
 
-## End-to-End Results
+## Historical Local End-to-End Results
 
 | Check | Run 1 | Run 2 |
 | --- | ---: | ---: |
@@ -35,7 +41,20 @@ All 10 rows that existed before run 2 retained every field, including their orig
 
 Run 2 appending one new job is evidence that this second real batch added a row; it is not a guarantee that another run will do the same. Search ordering and newly available jobs can change between runs. The workflow deduplicates each fetched batch against the current sheet. It does not provide full-market coverage, promise universal latency, or control the Actor cache.
 
+## Historical n8n Cloud Evidence (2026-10-25)
+
+Both executions used the **Manual Trigger** and left the schedule inactive. They used the same public workflow SHA-256 and private Search settings overrides for `limit: 10`, `sheetName: "CloudJobs"`, `budgetUsd: 0.05`, and `scrapeCompany: false`; no private workspace, account, spreadsheet ID, or execution ID is published here.
+
+| Run on Cloud 2.45.3 Experimental | Fetched | Existing IDs skipped | Appended | Sheet rows |
+| --- | ---: | ---: | ---: | ---: |
+| First run | 10 | 0 | 10 | 0 -> 10 |
+| Second run | 10 | 9 | 1 | 10 -> 11 |
+
+Both runs reported `coverage: "complete"`, zero failed searches, zero failed job details, zero failed companies, and `stoppedByBudget: false`. The final sheet had **11 unique IDs and 0 duplicates**. Independent readback confirmed that all ten rows from the first run retained all ten fields and their original `firstSeenAt` values.
+
 The later n8n Cloud 2.45.3 Experimental Manual Trigger runs were not schedule-time assertions: they used the instance-default timezone. After those runs, the private workflow was explicitly set to `Etc/UTC`, saved, reopened, and confirmed with the schedule still inactive. No Actor run was repeated for that settings change. The exported source still declares `timezone: "UTC"`, but import behavior must not be treated as proof that this setting was preserved.
+
+Read the [current sanitized measurements](../validation/2026-10-25/one-command-acceptance.json), the [historical local n8n measurements](../validation/2026-10-25/n8n-sheets-acceptance.json), and the [acceptance maintenance guidance](#maintaining-acceptance-evidence). These results are not a guarantee that a later run will append the same number of jobs.
 
 ## Supporting Checks
 
@@ -43,7 +62,9 @@ The later n8n Cloud 2.45.3 Experimental Manual Trigger runs were not schedule-ti
 - The embedded Code nodes passed an execution in n8n 2.44.6 with `pollCount: 2`, `splitItemCount: 2`, `normalizedCount: 2`, `newCount: 2`, and `urlGlobalType: "undefined"`.
 - The standalone API example returned 10 of 10 jobs on 2026-10-24.
 
-These checks support the release decision but are not additional Google Sheets end-to-end runs. Only the two runs above are counted as complete n8n and Google Sheets acceptance runs.
+These checks support the release decision but are not additional Google Sheets
+end-to-end runs. They are separate from the two historical local and two
+historical Cloud runs recorded above.
 
 ## Maintaining Acceptance Evidence
 
@@ -53,6 +74,6 @@ These checks support the release decision but are not additional Google Sheets e
 4. Verify the persisted n8n execution and the actual sheet. Confirm row transitions, unique IDs, required columns, `firstSeenAt`, Actor coverage counters, and whether existing rows changed.
 5. Use multiple sequential runs when changing deduplication behavior. Report what the later run actually appended rather than asserting that it must append zero rows.
 6. Keep credentials, OAuth data, account names, spreadsheet IDs or links, Actor run IDs, Dataset IDs, execution IDs, private filesystem paths, and raw execution bodies out of public evidence.
-7. Update the short validation summary in the root README whenever a new acceptance record becomes the current evidence.
+7. Keep the root README acceptance summary to a concise status and link; update it whenever a new record becomes the current evidence.
 
 For a replay, create a fresh `Jobs` sheet with the ten headers from [`sheets/jobs-header.csv`](../sheets/jobs-header.csv), configure the four Apify HTTP Request nodes and both Google Sheets nodes, keep the workflow inactive, and run it manually twice. The workflow is intended for serial, modest-volume use against one sheet.

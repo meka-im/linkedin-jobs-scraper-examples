@@ -1,0 +1,12 @@
+{
+  "description": "LinkedIn Jobs Scraper and daily n8n job monitor. Save matching jobs to Google Sheets, skip duplicates, and preserve first-seen history. By MEKA on Apify.",
+  "topics": [
+    "linkedin-jobs-scraper",
+    "n8n",
+    "google-sheets",
+    "job-monitoring",
+    "apify"
+  ],
+  "n8nTitle": "Monitor new LinkedIn jobs daily in Google Sheets with Apify",
+  "n8nOverview": "Stop checking LinkedIn manually. Save matching jobs to Google Sheets daily, skip duplicates, and keep your first-seen history."
+}

@@ -2,10 +2,10 @@
   <img src="assets/banner.svg" width="1200" alt="MEKA banner: New jobs. One clean sheet. A scheduled flow from n8n to MEKA and Google Sheets.">
 </p>
 
-<h1 align="center">LinkedIn Jobs to Google Sheets with n8n</h1>
+<h1 align="center">LinkedIn Jobs Scraper &amp; Daily Job Monitor for n8n</h1>
 
 <p align="center">
-  Find recent public LinkedIn jobs with MEKA, remove jobs you have already seen, and append the rest to a tidy Google Sheet.
+  Stop checking LinkedIn manually. Save matching jobs to Google Sheets daily, skip duplicates, and keep your first-seen history.
 </p>
 
 <p align="center">

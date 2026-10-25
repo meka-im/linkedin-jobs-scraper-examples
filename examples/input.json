@@ -1,0 +1,8 @@
+{
+  "keywords": "software engineer",
+  "location": "London, United Kingdom",
+  "datePosted": "pastWeek",
+  "count": 10,
+  "limitPerSource": 10,
+  "scrapeCompany": false
+}

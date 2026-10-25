@@ -1,4 +1,5 @@
 {
+  "homepage": "https://meka.im/tools/linkedin-jobs",
   "description": "LinkedIn Jobs Scraper and daily n8n job monitor. Save matching jobs to Google Sheets, skip duplicates, and preserve first-seen history. By MEKA on Apify.",
   "topics": [
     "linkedin-jobs-scraper",

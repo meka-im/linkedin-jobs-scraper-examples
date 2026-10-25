@@ -17,6 +17,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "build:cloud": "node scripts/build-cloud-workflow.mjs",
     "build:workflow": "node scripts/build-workflow.mjs && node scripts/build-n8n-smoke.mjs",
     "build:n8n-template": "node scripts/build-n8n-template.mjs",
     "meka-jobs": "node bin/meka-jobs.mjs",

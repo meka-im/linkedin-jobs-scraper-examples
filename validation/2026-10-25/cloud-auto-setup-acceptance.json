@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "measurement": "cloud-auto-setup-acceptance",
+  "date": "2026-10-25",
+  "runtime": {
+    "provider": "n8n Cloud",
+    "version": "2.45.3",
+    "environment": "Experimental",
+    "apifyCommunityNodePackage": "@apify/n8n-nodes-apify",
+    "apifyCommunityNodeVersion": "0.8.1",
+    "apifyCommunityNodeVerified": true
+  },
+  "artifacts": {
+    "cloudWorkflow": {
+      "path": "n8n/linkedin-jobs-cloud.json",
+      "sha256": "fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b",
+      "imported": true,
+      "active": false
+    },
+    "legacyWorkflow": {
+      "path": "n8n/linkedin-jobs-to-google-sheets.json",
+      "sha256": "8823e9720a601683197fff35a30586343f58632515e1854d7f13cd417f2299ac",
+      "unchanged": true
+    }
+  },
+  "oauthSmoke": {
+    "readOnly": true,
+    "apify": {
+      "method": "GET",
+      "host": "api.apify.com",
+      "allowedDomain": "api.apify.com",
+      "passed": true
+    },
+    "google": {
+      "method": "GET",
+      "allowedDomains": [
+        "www.googleapis.com",
+        "sheets.googleapis.com"
+      ],
+      "passed": true
+    }
+  },
+  "credentialBinding": {
+    "importContainsCredentialIds": false,
+    "credentialBearingNodes": 14,
+    "apifyHttpNodes": 4,
+    "googleBootstrapHttpNodes": 8,
+    "googleSheetsNodes": 2,
+    "savingCredentialsWithoutNodeConfirmationSufficient": false,
+    "preflight": {
+      "stage": "Assess Drive Search",
+      "httpStatus": "NO_STATUS",
+      "httpOutput": "Credentials not found",
+      "actorRunsStarted": 0
+    },
+    "allNodesConfirmedAndSavedBeforePaidRuns": true
+  },
+  "configuration": {
+    "manualTrigger": true,
+    "keywords": "software engineer",
+    "location": "London, United Kingdom",
+    "datePosted": "pastWeek",
+    "limit": 10,
+    "budgetCapUsd": 0.05,
+    "scrapeCompany": false
+  },
+  "execution": {
+    "completeEndToEndRuns": 2,
+    "liveActorRuns": 2,
+    "preflightActorRuns": 0,
+    "importedTimezonePreserved": false,
+    "manualRunsTimezone": "instance-default",
+    "finalWorkflowTimezoneEtcUTC": true,
+    "timezoneSavedAndReadBack": true,
+    "scheduleActive": false,
+    "publishClicked": false
+  },
+  "runs": [
+    {
+      "sequence": 1,
+      "fetchedCount": 10,
+      "newCount": 10,
+      "appendedCount": 10,
+      "skippedExisting": 0,
+      "skippedBatchDuplicates": 0,
+      "cacheHits": 0,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false
+    },
+    {
+      "sequence": 2,
+      "fetchedCount": 10,
+      "newCount": 0,
+      "appendedCount": 0,
+      "skippedExisting": 10,
+      "skippedBatchDuplicates": 0,
+      "cacheHits": 10,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false
+    }
+  ],
+  "spreadsheet": {
+    "automaticCreation": true,
+    "sameSpreadsheetReused": true,
+    "bootstrapState": "ready",
+    "visibleRange": "Jobs!A1:J11",
+    "headerCount": 10,
+    "exactHeader": true,
+    "businessRows": 10,
+    "uniqueJobIds": 10,
+    "duplicateJobIds": 0,
+    "independentReadbackAfterRun1Rows": 10,
+    "independentReadbackAfterRun2Rows": 10,
+    "run2ReadbackMatchesRun1": true,
+    "rowNumberFieldsPreserved": true,
+    "firstSeenAtPreserved": true,
+    "run1BusinessFieldsChecked": 100,
+    "run1BusinessFieldsPreserved": 100
+  },
+  "template": {
+    "publicTemplateIdAvailable": false,
+    "publicTemplateUrlAvailable": false,
+    "oneClickAvailable": false,
+    "humanReviewPending": true
+  },
+  "claimBoundaries": {
+    "twoClickSetup": false,
+    "clickToRun": false,
+    "fullMarketCoverage": false,
+    "universalLatencyClaim": false,
+    "laterRunGuaranteedToAppend": false
+  }
+}

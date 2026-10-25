@@ -1,5 +1,5 @@
 {
-  "name": "Monitor new LinkedIn jobs daily in Google Sheets with MEKA",
+  "name": "Monitor new LinkedIn jobs daily in Google Sheets with Apify",
   "nodes": [
     {
       "parameters": {},

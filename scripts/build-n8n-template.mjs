@@ -17,7 +17,7 @@ export const templateWorkflowPath = path.join(
   'n8n',
   'linkedin-jobs-to-google-sheets-template.json',
 );
-export const templateTitle = 'Monitor new LinkedIn jobs daily in Google Sheets with MEKA';
+export const templateTitle = 'Monitor new LinkedIn jobs daily in Google Sheets with Apify';
 export const beforeRunningStickyId = '84219f0b-d510-4d5c-bca6-c65a9d61ec1d';
 
 export const templateStickyContent = `## Before running

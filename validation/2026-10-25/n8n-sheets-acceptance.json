@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "measurement": "n8n-google-sheets-end-to-end",
+  "date": "2026-10-25",
+  "timezone": "Asia/Shanghai",
+  "runtime": {
+    "n8nVersion": "2.44.6"
+  },
+  "sourceWorkflow": {
+    "sha256": "8823e9720a601683197fff35a30586343f58632515e1854d7f13cd417f2299ac",
+    "active": false
+  },
+  "configuration": {
+    "sameExportedWorkflow": true,
+    "localCredentialBindings": true,
+    "localSpreadsheetId": true,
+    "keywords": "software engineer",
+    "location": "London, United Kingdom",
+    "datePosted": "pastWeek",
+    "workflowLimit": 10,
+    "templateDefaultLimit": 25,
+    "budgetUsd": 0.05,
+    "scrapeCompany": false,
+    "actorMemoryMb": 512
+  },
+  "execution": {
+    "completeEndToEndRuns": 2,
+    "distinctLiveActorRuns": 2,
+    "replayedActorRuns": 0,
+    "stubRuns": 0
+  },
+  "runs": [
+    {
+      "sequence": 1,
+      "n8nDurationMs": 13580,
+      "fetchedCount": 10,
+      "appendedCount": 10,
+      "skippedExisting": 0,
+      "sheetRowsBefore": 0,
+      "sheetRowsAfter": 10,
+      "uniqueIds": 10,
+      "duplicateIds": 0,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false,
+      "cacheHits": 0
+    },
+    {
+      "sequence": 2,
+      "n8nDurationMs": 15057,
+      "fetchedCount": 10,
+      "appendedCount": 1,
+      "skippedExisting": 9,
+      "sheetRowsBefore": 10,
+      "sheetRowsAfter": 11,
+      "uniqueIds": 11,
+      "duplicateIds": 0,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false,
+      "cacheHits": 9,
+      "existingRowsPreserved": 10,
+      "allExistingFieldsPreserved": true,
+      "allExistingFirstSeenAtPreserved": true
+    }
+  ],
+  "result": {
+    "finalSheetRows": 11,
+    "finalUniqueIds": 11,
+    "finalDuplicateIds": 0
+  },
+  "scope": {
+    "boundedBatchDeduplication": true,
+    "fullMarketCoverage": false,
+    "laterRunGuaranteedToAddRows": false,
+    "universalLatencyClaim": false,
+    "actorCacheControlled": false
+  }
+}

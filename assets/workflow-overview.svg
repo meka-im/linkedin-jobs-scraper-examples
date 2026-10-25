@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="410" viewBox="0 0 1200 410" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">LinkedIn Jobs to Google Sheets workflow overview</title>
+  <desc id="flow-desc">Illustration of a scheduled n8n workflow that runs MEKA, validates the Actor output, reads the Jobs sheet, removes duplicate job IDs, and appends new rows. This is not a product screenshot.</desc>
+  <defs>
+    <linearGradient id="flow-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f9ff"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <filter id="flow-shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#061b37" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="410" rx="30" fill="url(#flow-bg)"/>
+  <rect x="1" y="1" width="1198" height="408" rx="29" fill="none" stroke="#dfe9f6" stroke-width="2"/>
+  <circle cx="1101" cy="44" r="112" fill="#075cf5" opacity="0.035"/>
+
+  <g aria-hidden="true">
+    <rect x="58" y="45" width="36" height="36" rx="9" fill="#075cf5"/>
+    <rect x="65" y="52" width="9" height="9" rx="2" fill="#ffffff" opacity="0.95"/>
+    <rect x="78" y="52" width="9" height="9" rx="2" fill="#ffffff" opacity="0.70"/>
+    <rect x="65" y="65" width="9" height="9" rx="2" fill="#ffffff" opacity="0.70"/>
+    <rect x="78" y="65" width="9" height="9" rx="2" fill="#ffffff" opacity="0.95"/>
+    <text x="108" y="61" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="2.2">MEKA  /  WORKFLOW</text>
+  </g>
+  <text x="58" y="113" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="2">DAILY DATA PATH</text>
+  <rect x="885" y="39" width="257" height="36" rx="18" fill="#ffffff" stroke="#dfe9f6"/>
+  <circle cx="904" cy="57" r="4" fill="#075cf5"/>
+  <text x="918" y="62" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" letter-spacing="1">ILLUSTRATION  /  NOT A SCREENSHOT</text>
+
+  <path d="M98 190H1102" stroke="#dfe9f6" stroke-width="4" stroke-linecap="round" aria-hidden="true"/>
+  <path d="M198 190H222M414 190H438M630 190H654M846 190H870" stroke="#8ca8c5" stroke-width="3" stroke-linecap="round" aria-hidden="true"/>
+  <path d="M218 184L225 190L218 196M434 184L441 190L434 196M650 184L657 190L650 196M866 184L873 190L866 196" fill="none" stroke="#8ca8c5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"/>
+
+  <g filter="url(#flow-shadow)">
+    <rect x="56" y="136" width="170" height="208" rx="21" fill="#ffffff" stroke="#dfe9f6"/>
+    <rect x="272" y="136" width="170" height="208" rx="21" fill="#ffffff" stroke="#dfe9f6"/>
+    <rect x="488" y="136" width="170" height="208" rx="21" fill="#ffffff" stroke="#dfe9f6"/>
+    <rect x="704" y="136" width="170" height="208" rx="21" fill="#ffffff" stroke="#dfe9f6"/>
+    <rect x="920" y="136" width="170" height="208" rx="21" fill="#ffffff" stroke="#dfe9f6"/>
+  </g>
+
+  <g>
+    <circle cx="88" cy="169" r="16" fill="#075cf5"/>
+    <text x="88" y="174" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">01</text>
+    <rect x="114" y="157" width="24" height="24" rx="7" fill="#075cf5" opacity="0.10"/>
+    <path d="M122 169H130M126 165L131 169L126 173" fill="none" stroke="#075cf5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="78" y="217" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Schedule</text>
+    <text x="78" y="242" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Manual test first</text>
+    <text x="78" y="262" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Daily at 08:00 UTC</text>
+    <rect x="78" y="289" width="66" height="25" rx="12.5" fill="#f5f9ff"/>
+    <text x="111" y="306" text-anchor="middle" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="700">TRIGGER</text>
+  </g>
+
+  <g>
+    <circle cx="304" cy="169" r="16" fill="#075cf5"/>
+    <text x="304" y="174" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">02</text>
+    <rect x="330" y="157" width="24" height="24" rx="7" fill="#075cf5" opacity="0.10"/>
+    <circle cx="342" cy="169" r="5" fill="none" stroke="#075cf5" stroke-width="2"/>
+    <path d="M346 173L351 178" stroke="#075cf5" stroke-width="2" stroke-linecap="round"/>
+    <text x="294" y="217" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Run MEKA</text>
+    <text x="294" y="242" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Start one Actor run</text>
+    <text x="294" y="262" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Poll with fixed bounds</text>
+    <rect x="294" y="289" width="100" height="25" rx="12.5" fill="#f5f9ff"/>
+    <text x="344" y="306" text-anchor="middle" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="700">VALIDATE OUTPUT</text>
+  </g>
+
+  <g>
+    <circle cx="520" cy="169" r="16" fill="#075cf5"/>
+    <text x="520" y="174" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">03</text>
+    <rect x="546" y="157" width="24" height="24" rx="7" fill="#0f9d58" opacity="0.10"/>
+    <path d="M558 157V181M552 163H564M552 169H564M552 175H564" stroke="#0f9d58" stroke-width="1.7" stroke-linecap="round"/>
+    <text x="510" y="217" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Read sheet</text>
+    <text x="510" y="242" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Open your Jobs tab</text>
+    <text x="510" y="262" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Collect existing IDs</text>
+    <rect x="510" y="289" width="80" height="25" rx="12.5" fill="#f5f9ff"/>
+    <text x="550" y="306" text-anchor="middle" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="700">GOOGLE</text>
+  </g>
+
+  <g>
+    <circle cx="736" cy="169" r="16" fill="#075cf5"/>
+    <text x="736" y="174" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">04</text>
+    <rect x="762" y="157" width="24" height="24" rx="7" fill="#075cf5" opacity="0.10"/>
+    <circle cx="771" cy="169" r="4" fill="#075cf5"/>
+    <circle cx="779" cy="169" r="4" fill="#075cf5" opacity="0.35"/>
+    <text x="726" y="217" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Deduplicate</text>
+    <text x="726" y="242" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Compare by job id</text>
+    <text x="726" y="262" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Keep first seen time</text>
+    <rect x="726" y="289" width="75" height="25" rx="12.5" fill="#f5f9ff"/>
+    <text x="763.5" y="306" text-anchor="middle" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="700">NO LLM</text>
+  </g>
+
+  <g>
+    <circle cx="952" cy="169" r="16" fill="#075cf5"/>
+    <text x="952" y="174" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">05</text>
+    <rect x="978" y="157" width="24" height="24" rx="7" fill="#075cf5" opacity="0.10"/>
+    <path d="M983 176L987 180L995 169" fill="none" stroke="#075cf5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="942" y="217" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">Append</text>
+    <text x="942" y="242" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Write unseen rows</text>
+    <text x="942" y="262" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Use RAW cell format</text>
+    <rect x="942" y="289" width="86" height="25" rx="12.5" fill="#f5f9ff"/>
+    <text x="985" y="306" text-anchor="middle" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="700">SHEETS</text>
+  </g>
+
+  <text x="58" y="380" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">A clean empty batch is a valid zero-new result. It does not imply complete market coverage.</text>
+  <text x="1142" y="380" text-anchor="end" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700">ONE WRITER / ONE JOBS SHEET</text>
+</svg>

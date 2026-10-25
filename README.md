@@ -9,14 +9,14 @@
 </p>
 
 <p align="center">
-  <a href="#manual-or-n8n-cloud-import">
-    <img src="https://img.shields.io/badge/Manual_setup_in_n8n_Cloud-ea4b71?style=for-the-badge&logo=n8n&logoColor=white" alt="Manually set up the workflow in n8n Cloud">
+  <a href="docs/cloud-setup.md">
+    <img src="https://img.shields.io/badge/Cloud_auto--setup-0a7f5a?style=for-the-badge&logo=n8n&logoColor=white" alt="Open the n8n Cloud auto-setup guide">
+  </a>
+  <a href="#header-auth-fallback">
+    <img src="https://img.shields.io/badge/Header_Auth_fallback-ea4b71?style=for-the-badge&logo=n8n&logoColor=white" alt="Use the original Header Auth workflow">
   </a>
   <a href="https://raw.githubusercontent.com/meka-im/linkedin-jobs-scraper-examples/main/n8n/linkedin-jobs-to-google-sheets.json">
-    <img src="https://img.shields.io/badge/Get_the_n8n_workflow-075cf5?style=for-the-badge&logo=n8n&logoColor=white" alt="Get the n8n workflow">
-  </a>
-  <a href="https://sheets.google.com/create">
-    <img src="https://img.shields.io/badge/Create_a_Google_Sheet-0f9d58?style=for-the-badge&logo=googlesheets&logoColor=white" alt="Create a Google Sheet">
+    <img src="https://img.shields.io/badge/Get_Header_Auth_JSON-075cf5?style=for-the-badge&logo=n8n&logoColor=white" alt="Get the original Header Auth workflow JSON">
   </a>
   <a href="https://apify.com/meka.im/linkedin-jobs-scraper">
     <img src="https://img.shields.io/badge/Run_on_Apify-061b37?style=for-the-badge" alt="Run on Apify">
@@ -27,7 +27,8 @@
 </p>
 
 <p align="center">
-  <a href="#manual-or-n8n-cloud-import">Manual n8n Cloud import</a> &middot;
+  <a href="docs/cloud-setup.md">Cloud auto-setup</a> &middot;
+  <a href="#header-auth-fallback">Header Auth fallback</a> &middot;
   <a href="#one-command-start">One-command start</a> &middot;
   <a href="#how-it-works">How it works</a> &middot;
   <a href="#api-examples">API examples</a> &middot;
@@ -35,9 +36,9 @@
 </p>
 
 <p align="center">
-  <strong>Manually import in n8n Cloud &rarr; connect your accounts &rarr; test &rarr; enable.</strong>
-  <a href="docs/setup.md">Setup guide</a><br>
-  <sub>Official template button pending n8n review; import manually below. The import uses your own n8n, Apify, and Google accounts.</sub>
+  <strong>Cloud auto-setup: import &rarr; connect your accounts &rarr; save matching jobs.</strong>
+  <a href="docs/cloud-setup.md">Start the Cloud guide</a><br>
+  <sub>Managed OAuth creates and reuses a tagged Google spreadsheet with the exact header, so you do not copy a token, spreadsheet ID, or headers.</sub>
 </p>
 
 ## Why this workflow
@@ -45,7 +46,17 @@
 - **Daily schedule with an explicit timezone.** A manual trigger makes setup testable. The included Schedule Trigger is set to **08:00** but stays inactive. Before enabling it, explicitly choose the workflow timezone and verify what 08:00 means in that timezone.
 - **Incremental by design.** Each run searches a recent window, deduplicates by LinkedIn job `id`, and appends only unseen rows.
 - **Stable first-seen data.** Existing rows are not rewritten, so `firstSeenAt` remains the timestamp when that job first entered your sheet.
-- **Small dependency surface.** The workflow uses built-in n8n nodes. It uses no LLM and no third-party npm packages.
+- **Small dependency surface.** The original Header Auth workflow and CLI use built-in nodes or runtime-standard features. The Cloud auto-setup variant additionally requires the official `@apify/n8n-nodes-apify` community package so HTTP Request nodes can use its Apify OAuth credential.
+
+## Cloud auto-setup
+
+The convenience variant was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. It is still a manual JSON import until n8n approves a public template. See the [sanitized acceptance evidence](validation/2026-10-25/cloud-auto-setup-acceptance.json).
+
+1. **Import.** Add [`n8n/linkedin-jobs-cloud.json`](n8n/linkedin-jobs-cloud.json) as a new, inactive workflow. Do not prepare a sheet or header.
+2. **Connect and confirm.** Create or choose one managed Apify OAuth credential and one Google Sheets OAuth credential. The JSON carries no credential IDs, so open every credential-bearing node, confirm the matching credential, and save. The [Cloud guide](docs/cloud-setup.md) lists the nodes and exact domain restrictions.
+3. **Search and test.** Set `keywords` and `location`, review the advanced date window, result limit, and spending cap, then run the **Manual Trigger**. A successful bootstrap creates or reuses one tagged spreadsheet and its exact ten-column `Jobs` worksheet, then the original deduplication and append flow takes over.
+
+The source JSON declares `UTC`, but n8n Cloud 2.45.3 Experimental did not preserve `settings.timezone` on import. The two manual acceptance runs used the instance default. Before enabling the schedule, explicitly choose `Etc/UTC` or your local timezone, verify what **08:00** means, and save.
 
 ## How it works
 
@@ -57,7 +68,17 @@
 
 The workflow checks the Actor's `OUTPUT` counters before accepting Dataset items. A clean empty batch means no new IDs were found in that fetched batch; it does not imply full-market coverage.
 
-## Manual or n8n Cloud import
+## Header Auth fallback
+
+The original [Header Auth workflow](n8n/linkedin-jobs-to-google-sheets.json)
+remains available for self-hosted n8n, environments where Apify OAuth is
+unavailable, and users who prefer a dedicated token with narrower permissions.
+Its executable graph and local/import fingerprint are unchanged. For the
+convenience path with OAuth and an automatically created sheet, use
+[Cloud auto-setup](docs/cloud-setup.md).
+
+<details>
+<summary><strong>Show the manual Header Auth import and sheet setup</strong></summary>
 
 Import the workflow into a new, inactive workflow in your own n8n workspace.
 Review the included **Search settings** defaults, select your own search
@@ -100,9 +121,8 @@ charge for their services.
    n8n execution and the actual sheet. Activate the schedule only after that
    test succeeds.
 
-The manual import above is available now. The official n8n one-click template
-button is still pending n8n review; no public template URL or template ID
-exists yet.
+The manual Header Auth import is available now. No public n8n template URL or
+template ID exists yet.
 
 Tested locally and on n8n Cloud, including duplicate skipping.
 [Validation details](docs/acceptance.md) explain the evidence scope and limits.
@@ -118,6 +138,8 @@ Google Sheets may place that text in one cell. The workflow requires these ten
 exact header names. This guide uses the worksheet name `Jobs`; another tab name
 works when `sheetName` in **Search settings** matches it. The order above is
 recommended, while row mapping and deduplication use the header names.
+
+</details>
 
 <details>
 <summary><strong>Using self-hosted n8n?</strong></summary>
@@ -239,17 +261,23 @@ Each selected command writes Dataset items to `jobs.json`. Change [examples/inpu
 
 ## FAQ
 
+- **Which setup should I use?** Use [Cloud auto-setup](docs/cloud-setup.md) for managed Apify/Google OAuth and automatic spreadsheet creation in n8n Cloud. Use the [Header Auth fallback](#header-auth-fallback) for self-hosted n8n, unavailable Apify OAuth, or a dedicated smaller-permission token. Use the [one-command start](#one-command-start) for a local API or Docker-based n8n path.
 - **Does this cover every LinkedIn job in a market?** No. Results are bounded by the Actor input, public availability, search ranking, enrichment outcomes, and spending cap. Use focused searches for broader practical coverage.
-- **Is importing the JSON enough?** No. You still supply Apify and Google credentials, create the exact `Jobs` sheet, choose search settings, and test before activation.
-- **Where do keys and Google access live?** In your n8n credentials. The [workflow JSON](n8n/linkedin-jobs-to-google-sheets.json) and repository contain no token, account name, or spreadsheet ID. MEKA does not receive access to your Google credentials.
+- **Is importing the Cloud JSON enough?** No. Importing does not bind credential IDs. Create or choose the two OAuth credentials, set their allowed HTTP domains, open every credential-bearing node, confirm the matching credential, save, choose the search, and run a manual test. The workflow creates and reuses the spreadsheet and exact `Jobs` header for you.
+- **Does the Cloud variant need me to copy a token, sheet ID, or header?** No. Choose managed OAuth and confirm every credential-bearing node. The sheet and ten-column header are created by the workflow. The original Header Auth workflow remains the optional path that uses a dedicated Apify API token and a pre-created sheet.
+- **Is a one-click or two-click official template available?** No. The official n8n template is still pending human review; there is no public template ID or URL yet. Do not expect a click-to-run setup. Account connection and per-node credential confirmation remain required.
+- **Where do keys and Google access live?** In your n8n credentials. Both workflow JSON files and the repository contain no token, account name, or spreadsheet ID. MEKA does not receive access to your Google credentials.
 - **Is it free?** The example code is MIT licensed, but Apify and n8n may charge for their services. Check current [Actor pricing](https://apify.com/meka.im/linkedin-jobs-scraper) and [n8n pricing](https://n8n.io/pricing/).
 
 ## Documentation
 
-- [Setup guide](docs/setup.md): one-command API and local n8n startup, manual/Cloud import, credentials, sheet creation, test, and troubleshooting.
+- [Cloud auto-setup guide](docs/cloud-setup.md): managed OAuth, automatic spreadsheet/header setup, persistence, recovery, and troubleshooting.
+- [Cloud auto-setup acceptance](validation/2026-10-25/cloud-auto-setup-acceptance.json): sanitized n8n Cloud 2.45.3 Experimental OAuth and two-run evidence.
+- [Setup guide](docs/setup.md): one-command API and local n8n startup, original Header Auth import, credentials, sheet creation, test, and troubleshooting.
 - [Technical reference](docs/reference.md): request sequence, polling, result semantics, failures, security, and tests.
 - [Acceptance notes](docs/acceptance.md): local and n8n Cloud evidence, limits, and dated measurement links.
 - [n8n template submission notes](docs/n8n-template-submission.md): maintainer copy for Creator submission, review, and release gating.
+- [Cloud auto-setup workflow JSON](n8n/linkedin-jobs-cloud.json): inactive, credential-free OAuth import with automatic sheet bootstrap.
 - [Workflow JSON](n8n/linkedin-jobs-to-google-sheets.json): inactive, credential-free n8n import.
 - [Template submission variant](n8n/linkedin-jobs-to-google-sheets-template.json): the same executable workflow with the review-ready title and expanded setup sticky.
 - [Repository tests](tests/): offline mocks for the API examples and embedded n8n Code nodes.

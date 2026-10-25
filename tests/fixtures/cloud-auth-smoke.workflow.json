@@ -1,0 +1,104 @@
+{
+  "name": "MEKA Cloud OAuth connection check",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "94e1689a-3ab9-4a99-b0bd-03b8e455f80b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.apify.com/v2/users/me",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "apifyOAuth2Api",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b7071588-4035-4921-a5c0-0c3ed06b1564",
+      "name": "Check Apify OAuth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        0
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "trashed=false and appProperties has { key='mekaCloudAuthSmoke' and value='never-created' }"
+            },
+            {
+              "name": "fields",
+              "value": "files(id),nextPageToken"
+            },
+            {
+              "name": "pageSize",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "8df2da6c-fe48-4e1f-9906-c3a3521781c8",
+      "name": "Check Google OAuth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        120,
+        0
+      ],
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Apify OAuth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Apify OAuth": {
+      "main": [
+        [
+          {
+            "node": "Check Google OAuth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

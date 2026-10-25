@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "measurement": "meka-one-command-and-cloud-acceptance",
+  "date": "2026-10-25",
+  "timezone": "Asia/Shanghai",
+  "workflow": {
+    "sha256": "8823e9720a601683197fff35a30586343f58632515e1854d7f13cd417f2299ac",
+    "publicSourceUnchangedForCloudRuns": true
+  },
+  "localOneCommand": {
+    "runtime": {
+      "nodeMajor": 22
+    },
+    "tests": {
+      "node": 70,
+      "python": 4,
+      "total": 74,
+      "passed": true
+    },
+    "npmPack": {
+      "fileCount": 8,
+      "packagePrivate": true
+    },
+    "packedCli": {
+      "invocation": "npm-exec-packed-tarball",
+      "emptyNpmCache": true,
+      "workingDirectoryContainedSpaces": true,
+      "helpLoadedWithoutActorRequest": true
+    },
+    "liveApiRun": {
+      "requestedCount": 10,
+      "deliveredCount": 10,
+      "uniqueCount": 10,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false
+    },
+    "dockerLifecycle": {
+      "image": "docker.n8n.io/n8nio/n8n:2.44.6",
+      "firstStartup": true,
+      "runningContainerReused": true,
+      "stoppedContainerRestartedWithFreshEmptyNpmCache": true,
+      "oneTimeImportMarkerCoveredByTests": true
+    }
+  },
+  "cloudAcceptance": {
+    "provider": "n8n Cloud",
+    "version": "2.45.3",
+    "environment": "Experimental",
+    "manualTrigger": true,
+    "scheduleActive": false,
+    "executionOrder": "v1",
+    "manualRunsUsedInstanceDefaultTimezone": true,
+    "afterManualRunsTimezoneVerified": "Etc/UTC",
+    "completeEndToEndRuns": 2,
+    "privateSearchSettingsOverrides": {
+      "limit": 10,
+      "sheetName": "CloudJobs",
+      "budgetUsd": 0.05,
+      "scrapeCompany": false
+    },
+    "runs": [
+      {
+        "sequence": 1,
+        "fetchedCount": 10,
+        "newCount": 10,
+        "appendedCount": 10,
+        "skippedExisting": 0,
+        "coverage": "complete",
+        "actorSummary": {
+          "failedSearches": 0,
+          "failedJobDetails": 0,
+          "failedCompanies": 0,
+          "stoppedByBudget": false
+        }
+      },
+      {
+        "sequence": 2,
+        "fetchedCount": 10,
+        "newCount": 1,
+        "appendedCount": 1,
+        "skippedExisting": 9,
+        "coverage": "complete",
+        "actorSummary": {
+          "failedSearches": 0,
+          "failedJobDetails": 0,
+          "failedCompanies": 0,
+          "stoppedByBudget": false
+        }
+      }
+    ],
+    "sheetVerification": {
+      "rowsBeforeRun1": 0,
+      "rowsAfterRun1": 10,
+      "rowsBeforeRun2": 10,
+      "rowsAfterRun2": 11,
+      "finalUniqueIds": 11,
+      "finalDuplicateIds": 0,
+      "independentReadback": true,
+      "firstRunRowsPreserved": 10,
+      "firstRunFieldCountPerRow": 10,
+      "firstRunAllFieldsPreserved": true,
+      "firstRunFirstSeenAtPreserved": true
+    },
+    "credentialPolicy": {
+      "scope": "scoped-actor-only",
+      "retention": "retained-at-user-request",
+      "apiHostRestriction": "api.apify.com",
+      "allowedOperations": [
+        "actor-run",
+        "automatic-read",
+        "current-run-default-storage"
+      ],
+      "revoked": false,
+      "furtherRunsStopped": true,
+      "tokenClearedFromMemoryAndClipboard": true
+    },
+    "officialTemplate": {
+      "creatorRegistered": true,
+      "candidateUploadedToCreator": true,
+      "termsConfirmed": true,
+      "submitted": true,
+      "aiReviewStatus": "completed",
+      "aiReviewCompleted": true,
+      "submissionStage": "human-review-pending",
+      "creatorDraftIdAvailable": true,
+      "humanReviewStatus": "pending",
+      "humanReviewSubmitted": true,
+      "humanReviewCompleted": false,
+      "reviewed": false,
+      "approved": false,
+      "templateIdAvailable": false,
+      "publicTemplateUrlAvailable": false,
+      "oneClickAvailable": false
+    }
+  },
+  "claimBoundaries": {
+    "fullMarketCoverage": false,
+    "laterCloudRunGuaranteedToAppend": false,
+    "universalLatencyClaim": false,
+    "officialTemplatePublished": false
+  }
+}

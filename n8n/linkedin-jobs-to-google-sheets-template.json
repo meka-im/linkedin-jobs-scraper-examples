@@ -1,0 +1,863 @@
+{
+  "name": "Monitor new LinkedIn jobs daily in Google Sheets with MEKA",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0f8447af-83f0-4c36-bcad-ea7ae560b153",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "bc7d9a5a-d3c3-466b-9e6a-1c1467abed88",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1180,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Before running\n\n**Who it is for:** Recruiters, job seekers, researchers, and teams tracking one public LinkedIn search in a Google Sheet.\n\n**How it works:** The workflow runs the MEKA LinkedIn Jobs Scraper through Apify, verifies Actor OUTPUT, reads existing IDs, and appends only unseen public jobs. The Manual Trigger supports a supervised first run. The daily Schedule Trigger stays inactive until enabled.\n\n**Setup:**\n\n1. Create a Google Sheet with a `Jobs` worksheet. Put these exact headers in A1: `id`, `title`, `company`, `location`, `postedAt`, `url`, `salary`, `employmentType`, `seniority`, `firstSeenAt`.\n2. In **Search settings**, enter your spreadsheet document ID and adjust keywords, location, limit, and budget.\n3. Create **HTTP Header Auth** named `Authorization` with value `Bearer <APIFY_TOKEN>` and select it on **Start Actor**, **Poll Actor Run**, **Get Run Output**, and **Get Dataset Items**.\n4. Connect **Google Sheets OAuth2** to **Read Existing Jobs** and **Append Rows**.\n5. In **Workflow settings -> Timezone**, choose `Etc/UTC` or your local timezone, then verify what the Daily Schedule's 08:00 means. Imports can use the n8n instance default even when the JSON declares UTC.\n6. Save, run the Manual Trigger, and inspect the execution and sheet. Enable the schedule only after that test succeeds.\n\n**Requirements:** an Apify token, a Google account that can edit the sheet, and n8n credentials for both services. This JSON contains no credentials or private spreadsheet ID.\n\n**Customize:** change the search, date window, limit, budget, worksheet name, or schedule. A result limit is not full-market coverage.\n\nRepository: https://github.com/meka-im/linkedin-jobs-scraper-examples\n\nMEKA Actor: https://apify.com/meka.im/linkedin-jobs-scraper",
+        "width": 1000,
+        "height": 1000
+      },
+      "id": "84219f0b-d510-4d5c-bca6-c65a9d61ec1d",
+      "name": "Before Running",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        -1300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "44f182b9-78ab-46fe-96ac-f3ec0e794af3",
+              "name": "keywords",
+              "value": "software engineer",
+              "type": "string"
+            },
+            {
+              "id": "0aa61d19-4101-4d2d-be3e-a9cf72ad005c",
+              "name": "location",
+              "value": "London, United Kingdom",
+              "type": "string"
+            },
+            {
+              "id": "c9941192-8e6b-4143-b606-cd78a9cf18fc",
+              "name": "datePosted",
+              "value": "pastWeek",
+              "type": "string"
+            },
+            {
+              "id": "2df74e4c-6017-493e-9128-97aa54cd89cc",
+              "name": "limit",
+              "value": 25,
+              "type": "number"
+            },
+            {
+              "id": "ad409653-f9ab-44db-b786-b0e0b55a21fb",
+              "name": "budgetUsd",
+              "value": 0.05,
+              "type": "number"
+            },
+            {
+              "id": "1f1514b8-7f0b-4f10-935c-66f5a7c21f69",
+              "name": "scrapeCompany",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "509a948c-d6d6-4984-8ef1-403fe5c24d88",
+              "name": "sheetId",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "fdf6bbb6-0e9c-45d1-9aef-2b1628337097",
+              "name": "sheetName",
+              "value": "Jobs",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7f4493f5-7dc8-4887-8b9c-3ca85145c9c2",
+      "name": "Search settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -960,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const config = $input.first()?.json ?? {};\n\nfunction requiredText(value, name) {\n  if (typeof value !== 'string' || !value.trim()) {\n    throw new Error(`${name} must be a non-empty string`);\n  }\n  return value.trim();\n}\n\nfunction positiveInteger(value, name, maximum) {\n  if (!Number.isInteger(value) || value < 1 || value > maximum) {\n    throw new Error(`${name} must be an integer from 1 to ${maximum}`);\n  }\n  return value;\n}\n\nconst datePostedValues = new Set(['anyTime', 'past24Hours', 'pastWeek', 'pastMonth']);\nconst datePosted = requiredText(config.datePosted, 'datePosted');\nif (!datePostedValues.has(datePosted)) {\n  throw new Error(`datePosted must be one of ${[...datePostedValues].join(', ')}`);\n}\n\nconst budgetUsd = Number(config.budgetUsd);\nif (!Number.isFinite(budgetUsd) || budgetUsd <= 0) {\n  throw new Error('budgetUsd must be a positive number');\n}\n\nconst limit = positiveInteger(config.limit, 'limit', 1000);\nconst sheetId = requiredText(config.sheetId, 'sheetId');\nif (!/^[A-Za-z0-9_-]{2,}$/.test(sheetId)) {\n  throw new Error('sheetId must be the Google Sheets document ID');\n}\n\nreturn [{\n  json: {\n    keywords: requiredText(config.keywords, 'keywords'),\n    location: requiredText(config.location, 'location'),\n    datePosted,\n    limit,\n    count: limit,\n    limitPerSource: limit,\n    scrapeCompany: config.scrapeCompany === true,\n    budgetUsd,\n    sheetId,\n    sheetName: requiredText(config.sheetName, 'sheetName'),\n    actorTimeoutSeconds: 300,\n    waitForFinishSeconds: 60,\n    pollDelaySeconds: 5,\n    maxPollAttempts: 6,\n    runDeadlineEpochMs: Date.now() + 480_000,\n  },\n}];\n"
+      },
+      "id": "7acb8a09-d5b8-4620-b511-ea56beacb663",
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/meka.im~linkedin-jobs-scraper/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "memory",
+              "value": "512"
+            },
+            {
+              "name": "timeout",
+              "value": "={{ $json.actorTimeoutSeconds }}"
+            },
+            {
+              "name": "maxTotalChargeUsd",
+              "value": "={{ $json.budgetUsd }}"
+            },
+            {
+              "name": "waitForFinish",
+              "value": "={{ $json.waitForFinishSeconds }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"keywords\": $json.keywords, \"location\": $json.location, \"datePosted\": $json.datePosted, \"count\": $json.count, \"limitPerSource\": $json.limitPerSource, \"scrapeCompany\": $json.scrapeCompany } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "id": "8fb1ea03-539e-42fd-94fe-da51f63eaa9b",
+      "name": "Start Actor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -480,
+        -80
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst settings = $('Input Validation').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error('Apify start response was not valid JSON');\n  }\n}\n\nconst run = body?.data ?? body;\nif (!run || typeof run !== 'object') {\n  throw new Error('Apify start response did not contain a run');\n}\n\nconst runId = String(run.id ?? '').trim();\nif (!runId) {\n  throw new Error('Apify start response did not contain a run ID');\n}\n\nconst status = String(run.status ?? '').trim().toUpperCase();\nconst datasetId = String(run.defaultDatasetId ?? '').trim();\nconst state = {\n  ...settings,\n  runId,\n  datasetId,\n  status,\n  pollCount: 0,\n};\n\nif (status === 'SUCCEEDED') {\n  if (!datasetId) {\n    throw new Error(`Actor run ${runId} succeeded without a defaultDatasetId`);\n  }\n  return [{ json: { ...state, nextAction: 'fetch' } }];\n}\n\nif (status === 'READY' || status === 'RUNNING') {\n  if (Date.now() >= settings.runDeadlineEpochMs) {\n    throw new Error(`Actor run ${runId} is still ${status} after the local deadline. Recovery run ID: ${runId}`);\n  }\n  return [{ json: { ...state, nextAction: 'poll' } }];\n}\n\nthrow new Error(`Actor run ${runId} ended with status ${status || 'UNKNOWN'}. Recovery run ID: ${runId}`);\n"
+      },
+      "id": "b2923778-6d15-47cd-8b28-8d7088172168",
+      "name": "Assess Start Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "78e30302-df87-4a13-8a97-3d47481a30a3",
+              "leftValue": "={{ $json.nextAction === 'fetch' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "308807c3-c0b6-44e6-bccb-71f5ebb15262",
+      "name": "Is Run Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.pollDelaySeconds }}",
+        "unit": "seconds",
+        "options": {}
+      },
+      "id": "2ae61a80-5fc1-435f-9163-95804778d0e0",
+      "name": "Wait for Actor",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/actor-runs/' + $json.runId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "waitForFinish",
+              "value": "={{ $json.waitForFinishSeconds }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "id": "90344a24-f6d2-46ab-a0ec-bc9f15d7ea22",
+      "name": "Poll Actor Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        100
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const previous = $('Wait for Actor').first()?.json ?? {};\nconst response = $input.first()?.json ?? {};\nconst settings = $('Input Validation').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Apify poll response for run ${previous.runId ?? 'UNKNOWN'} was not valid JSON`);\n  }\n}\n\nconst run = body?.data ?? body;\nif (!run || typeof run !== 'object') {\n  throw new Error(`Apify poll response did not contain run ${previous.runId ?? 'UNKNOWN'}`);\n}\n\nconst runId = String(run.id ?? previous.runId ?? '').trim();\nif (!runId || runId !== previous.runId) {\n  throw new Error(`Apify poll response changed or omitted run ID ${previous.runId ?? 'UNKNOWN'}`);\n}\n\nconst status = String(run.status ?? '').trim().toUpperCase();\nconst datasetId = String(run.defaultDatasetId ?? previous.datasetId ?? '').trim();\nconst pollCount = Number(previous.pollCount ?? 0) + 1;\nconst state = {\n  ...previous,\n  status,\n  datasetId,\n  pollCount,\n};\n\nif (status === 'SUCCEEDED') {\n  if (!datasetId) {\n    throw new Error(`Actor run ${runId} succeeded without a defaultDatasetId`);\n  }\n  return [{ json: { ...state, nextAction: 'fetch' } }];\n}\n\nif (status === 'READY' || status === 'RUNNING') {\n  if (Date.now() >= settings.runDeadlineEpochMs) {\n    throw new Error(`Actor run ${runId} is still ${status} after the local deadline. Recovery run ID: ${runId}`);\n  }\n  if (pollCount >= settings.maxPollAttempts) {\n    throw new Error(`Actor run ${runId} did not finish after ${pollCount} polls. Recovery run ID: ${runId}`);\n  }\n  return [{ json: { ...state, nextAction: 'poll' } }];\n}\n\nthrow new Error(`Actor run ${runId} ended with status ${status || 'UNKNOWN'}. Recovery run ID: ${runId}`);\n"
+      },
+      "id": "5e894632-3b96-485d-a413-dd70c90d44ce",
+      "name": "Assess Polled Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/actor-runs/' + $json.runId + '/key-value-store/records/OUTPUT' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "id": "2a31d69a-2e72-47de-8c5d-46db26df32a5",
+      "name": "Get Run Output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -80
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst state = $('Is Run Succeeded?').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} returned an invalid OUTPUT summary`);\n  }\n}\nconst summary = body?.data ?? body;\nif (!summary || typeof summary !== 'object' || Array.isArray(summary)) {\n  throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} returned an invalid OUTPUT summary`);\n}\n\nconst numericFields = [\n  'delivered',\n  'uniqueJobs',\n  'searchPages',\n  'failedSearches',\n  'failedJobDetails',\n  'failedCompanies',\n  'cacheHits',\n];\nconst clean = { status: String(summary.status ?? '') };\nfor (const field of numericFields) {\n  const value = summary[field];\n  if (!Number.isInteger(value) || value < 0) {\n    throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} OUTPUT summary has an invalid ${field}`);\n  }\n  clean[field] = value;\n}\nif (typeof summary.stoppedByBudget !== 'boolean') {\n  throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} OUTPUT summary has an invalid stoppedByBudget`);\n}\nclean.stoppedByBudget = summary.stoppedByBudget;\n\nif (clean.failedSearches > 0) {\n  throw new Error(\n    `Actor run ${state.runId ?? 'UNKNOWN'} completed with ${clean.failedSearches} failed search(es); no dataset was accepted. Recovery run ID: ${state.runId ?? 'UNKNOWN'}`,\n  );\n}\n\nclean.coverage = (\n  clean.failedJobDetails > 0\n  || clean.failedCompanies > 0\n  || clean.stoppedByBudget\n) ? 'partial' : 'complete';\n\nreturn [{\n  json: {\n    ...state,\n    actorSummary: clean,\n    coverage: clean.coverage,\n  },\n}];\n"
+      },
+      "id": "a6675562-175f-4e38-903f-8bde3737d687",
+      "name": "Assess Run Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.apify.com/v2/datasets/' + $json.datasetId + '/items' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.count }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 70000
+        }
+      },
+      "id": "1d577a21-233a-4a45-9b0c-a20b3f65ec42",
+      "name": "Get Dataset Items",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -80
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst run = $('Assess Run Output').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Dataset ${run.datasetId ?? 'UNKNOWN'} did not return valid JSON`);\n  }\n}\nif (!Array.isArray(body) && Array.isArray(body?.data)) {\n  body = body.data;\n}\nif (!Array.isArray(body)) {\n  throw new Error(`Dataset ${run.datasetId ?? 'UNKNOWN'} response must be an array`);\n}\n\nfunction text(value) {\n  return value == null ? '' : String(value).trim();\n}\n\nfunction linkedInJobPathId(link, label) {\n  if (\n    typeof link !== 'string'\n    || link !== link.trim()\n    || /[\\s\\\\\\u0000-\\u001f\\u007f-\\u009f]/u.test(link)\n    || /%(?![0-9a-f]{2})/iu.test(link)\n  ) {\n    throw new Error(`${label} has an invalid link`);\n  }\n\n  for (const match of link.matchAll(/%([0-9a-f]{2})/giu)) {\n    const byte = Number.parseInt(match[1], 16);\n    if (byte < 0x20 || byte === 0x5c || byte === 0x7f) {\n      throw new Error(`${label} has an unsafe percent-encoded character in its link`);\n    }\n  }\n\n  if (!/^https:\\/\\//i.test(link)) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n  const rest = link.slice('https://'.length);\n  const suffixStart = rest.search(/[?#]/);\n  const authorityAndPath = suffixStart === -1 ? rest : rest.slice(0, suffixStart);\n  const slash = authorityAndPath.indexOf('/');\n  if (slash <= 0) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n\n  const authority = authorityAndPath.slice(0, slash);\n  if (\n    authority.includes('@')\n    || authority.includes(':')\n    || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*linkedin\\.com$/i.test(authority)\n  ) {\n    throw new Error(`${label} link must use a public LinkedIn HTTPS authority`);\n  }\n\n  const path = authorityAndPath.slice(slash);\n  const prefix = '/jobs/view/';\n  if (!path.startsWith(prefix)) {\n    throw new Error(`${label} link must be a LinkedIn job view URL`);\n  }\n  let slug = path.slice(prefix.length);\n  if (slug.endsWith('/')) slug = slug.slice(0, -1);\n  if (!slug || slug.includes('/')) {\n    throw new Error(`${label} link must contain one non-empty job slug`);\n  }\n\n  const pathIdMatch = /(?:^|[-_])([0-9]+)$/.exec(slug);\n  if (!pathIdMatch) {\n    throw new Error(`${label} link does not end with a numeric job ID`);\n  }\n  return pathIdMatch[1];\n}\n\nfunction requirePublicJob(item, index) {\n  if (!item || typeof item !== 'object' || Array.isArray(item)) {\n    throw new Error(`Dataset item ${index} is not an object`);\n  }\n  const id = text(item.id);\n  const title = text(item.title);\n  const link = item.link;\n  if (!/^[0-9]+$/.test(id)) {\n    throw new Error(`Dataset item ${index} has an invalid id`);\n  }\n  if (!title) {\n    throw new Error(`Dataset item ${index} is missing title`);\n  }\n  const pathId = linkedInJobPathId(link, `Dataset item ${index}`);\n  if (pathId !== id) {\n    throw new Error(`Dataset item ${index} link job ID does not match its id`);\n  }\n  return { id, title, link };\n}\n\nconst firstSeenAt = new Date().toISOString();\nconst jobs = body.map((item, index) => {\n  const publicJob = requirePublicJob(item, index);\n  return {\n    id: publicJob.id,\n    title: publicJob.title,\n    company: text(item.companyName),\n    location: text(item.location),\n    postedAt: text(item.postedAt),\n    url: publicJob.link,\n    salary: text(item.salary),\n    employmentType: text(item.employmentType),\n    seniority: text(item.seniorityLevel),\n    firstSeenAt,\n  };\n});\n\nreturn [{\n  json: {\n    jobs,\n    runId: run.runId,\n    datasetId: run.datasetId,\n    status: run.status,\n    count: run.count,\n    sheetId: run.sheetId,\n    sheetName: run.sheetName,\n    actorSummary: run.actorSummary,\n    coverage: run.coverage,\n    fetchedCount: jobs.length,\n  },\n}];\n"
+      },
+      "id": "f2adbd4e-2b09-466a-9990-cb05579bf133",
+      "name": "Normalize Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Input Validation').first().json.sheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Input Validation').first().json.sheetName }}"
+        },
+        "options": {}
+      },
+      "id": "ae530c96-97da-46aa-9567-8c339d1ab19d",
+      "name": "Read Existing Jobs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        -80
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const source = $('Normalize Jobs').first()?.json ?? {};\nconst tableItems = $input.all();\n\nfunction text(value) {\n  return value == null ? '' : String(value).trim();\n}\n\nfunction linkedInJobPathId(link, label) {\n  if (\n    typeof link !== 'string'\n    || link !== link.trim()\n    || /[\\s\\\\\\u0000-\\u001f\\u007f-\\u009f]/u.test(link)\n    || /%(?![0-9a-f]{2})/iu.test(link)\n  ) {\n    throw new Error(`${label} has an invalid link`);\n  }\n\n  for (const match of link.matchAll(/%([0-9a-f]{2})/giu)) {\n    const byte = Number.parseInt(match[1], 16);\n    if (byte < 0x20 || byte === 0x5c || byte === 0x7f) {\n      throw new Error(`${label} has an unsafe percent-encoded character in its link`);\n    }\n  }\n\n  if (!/^https:\\/\\//i.test(link)) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n  const rest = link.slice('https://'.length);\n  const suffixStart = rest.search(/[?#]/);\n  const authorityAndPath = suffixStart === -1 ? rest : rest.slice(0, suffixStart);\n  const slash = authorityAndPath.indexOf('/');\n  if (slash <= 0) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n\n  const authority = authorityAndPath.slice(0, slash);\n  if (\n    authority.includes('@')\n    || authority.includes(':')\n    || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*linkedin\\.com$/i.test(authority)\n  ) {\n    throw new Error(`${label} link must use a public LinkedIn HTTPS authority`);\n  }\n\n  const path = authorityAndPath.slice(slash);\n  const prefix = '/jobs/view/';\n  if (!path.startsWith(prefix)) {\n    throw new Error(`${label} link must be a LinkedIn job view URL`);\n  }\n  let slug = path.slice(prefix.length);\n  if (slug.endsWith('/')) slug = slug.slice(0, -1);\n  if (!slug || slug.includes('/')) {\n    throw new Error(`${label} link must contain one non-empty job slug`);\n  }\n\n  const pathIdMatch = /(?:^|[-_])([0-9]+)$/.exec(slug);\n  if (!pathIdMatch) {\n    throw new Error(`${label} link does not end with a numeric job ID`);\n  }\n  return pathIdMatch[1];\n}\n\nfunction publicId(value, label) {\n  const id = text(value);\n  if (!/^[0-9]+$/.test(id)) {\n    throw new Error(`${label} has an invalid id`);\n  }\n  return id;\n}\n\nfunction validateJob(job, index) {\n  if (!job || typeof job !== 'object' || Array.isArray(job)) {\n    throw new Error(`Normalized job ${index} is not an object`);\n  }\n  const id = publicId(job.id, `Normalized job ${index}`);\n  if (typeof job.title !== 'string' || !job.title.trim()) {\n    throw new Error(`Normalized job ${index} is missing title`);\n  }\n  if (typeof job.url !== 'string') {\n    throw new Error(`Normalized job ${index} is missing link`);\n  }\n  const pathId = linkedInJobPathId(job.url, `Normalized job ${index}`);\n  if (pathId !== id) {\n    throw new Error(`Normalized job ${index} link job ID does not match its id`);\n  }\n  return id;\n}\n\nif (!Array.isArray(source.jobs)) {\n  throw new Error('Normalize Jobs did not return a jobs array');\n}\n\nconst existingIds = new Set();\ntableItems.forEach((item, rowIndex) => {\n  const row = item?.json ?? {};\n  const values = Object.entries(row)\n    .filter(([key]) => key !== 'row_number')\n    .map(([, value]) => value);\n  const rowIsEmpty = values.every((value) => value == null || text(value) === '');\n  if (rowIsEmpty) return;\n  if (row.id == null || text(row.id) === '') {\n    const sheetRow = text(row.row_number) || String(rowIndex + 1);\n    throw new Error(`Existing sheet row ${sheetRow} has data but no id`);\n  }\n  existingIds.add(publicId(row.id, 'Existing sheet row'));\n});\n\nconst fetchedIds = new Set();\nconst newJobs = [];\nlet skippedExisting = 0;\nlet skippedBatchDuplicates = 0;\n\nsource.jobs.forEach((job, index) => {\n  const id = validateJob(job, index);\n  if (existingIds.has(id)) {\n    skippedExisting += 1;\n  } else if (fetchedIds.has(id)) {\n    skippedBatchDuplicates += 1;\n  } else {\n    fetchedIds.add(id);\n    newJobs.push(job);\n  }\n});\n\nconst summary = {\n  runId: source.runId,\n  datasetId: source.datasetId,\n  actorSummary: source.actorSummary,\n  coverage: source.coverage,\n  fetchedCount: source.jobs.length,\n  newCount: newJobs.length,\n  skippedExisting,\n  skippedBatchDuplicates,\n  hasNewJobs: newJobs.length > 0,\n};\n\nreturn [{ json: { newJobs, summary, hasNewJobs: summary.hasNewJobs } }];\n"
+      },
+      "id": "be0ec152-d240-4abe-a128-cf080ac98c3f",
+      "name": "Filter New IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cb120943-38a5-4509-8669-8e43cd19971e",
+              "leftValue": "={{ $json.hasNewJobs }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b92c5a25-59d8-41c2-895a-3557ea0bcbdf",
+      "name": "Has New Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "newJobs",
+        "options": {}
+      },
+      "id": "35af0c0c-277e-4aa1-9307-1e5c34646858",
+      "name": "Split Out New Jobs",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Input Validation').first().json.sheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Input Validation').first().json.sheetName }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "title": "={{ $json.title }}",
+            "company": "={{ $json.company }}",
+            "location": "={{ $json.location }}",
+            "postedAt": "={{ $json.postedAt }}",
+            "url": "={{ $json.url }}",
+            "salary": "={{ $json.salary }}",
+            "employmentType": "={{ $json.employmentType }}",
+            "seniority": "={{ $json.seniority }}",
+            "firstSeenAt": "={{ $json.firstSeenAt }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "postedAt",
+              "displayName": "postedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "employmentType",
+              "displayName": "employmentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "seniority",
+              "displayName": "seniority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "firstSeenAt",
+              "displayName": "firstSeenAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "7d668f07-2fc2-40c6-a36b-4f4f7ec0b8b3",
+      "name": "Append Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2160,
+        -180
+      ],
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const filtered = $('Filter New IDs').first()?.json ?? {};\nconst summary = filtered.summary;\nif (!summary || typeof summary !== 'object') {\n  throw new Error('Filter New IDs did not produce a summary');\n}\n\nconst appendedCount = summary.hasNewJobs ? summary.newCount : 0;\nconst partial = summary.coverage === 'partial';\nlet message;\nif (appendedCount && partial) {\n  message = `Appended ${appendedCount} new job(s) from a partial Actor run. Inspect the warning counters.`;\n} else if (appendedCount) {\n  message = `Appended ${appendedCount} new job(s) after deduplication.`;\n} else if (partial) {\n  message = 'No new delivered jobs were appended, but the Actor run was partial; this does not establish that no matching jobs were posted.';\n} else {\n  message = 'No unseen IDs were found in this fetched batch; no rows were appended.';\n}\n\nreturn [{\n  json: {\n    status: 'success',\n    runId: summary.runId,\n    datasetId: summary.datasetId,\n    fetchedCount: summary.fetchedCount,\n    newCount: summary.newCount,\n    appendedCount,\n    skippedExisting: summary.skippedExisting,\n    skippedBatchDuplicates: summary.skippedBatchDuplicates,\n    coverage: summary.coverage,\n    actorSummary: summary.actorSummary,\n    message,\n  },\n}];\n"
+      },
+      "id": "b98dfa3e-57ea-4f30-a315-69ba678adf60",
+      "name": "Run Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        -80
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule": {
+      "main": [
+        [
+          {
+            "node": "Search settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search settings": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Start Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Actor": {
+      "main": [
+        [
+          {
+            "node": "Assess Start Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Start Run": {
+      "main": [
+        [
+          {
+            "node": "Is Run Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Run Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Get Run Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Actor": {
+      "main": [
+        [
+          {
+            "node": "Poll Actor Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Actor Run": {
+      "main": [
+        [
+          {
+            "node": "Assess Polled Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Polled Run": {
+      "main": [
+        [
+          {
+            "node": "Is Run Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Run Output": {
+      "main": [
+        [
+          {
+            "node": "Assess Run Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Run Output": {
+      "main": [
+        [
+          {
+            "node": "Get Dataset Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Dataset Items": {
+      "main": [
+        [
+          {
+            "node": "Normalize Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Jobs": {
+      "main": [
+        [
+          {
+            "node": "Read Existing Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing Jobs": {
+      "main": [
+        [
+          {
+            "node": "Filter New IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New IDs": {
+      "main": [
+        [
+          {
+            "node": "Has New Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Split Out New Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out New Jobs": {
+      "main": [
+        [
+          {
+            "node": "Append Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Rows": {
+      "main": [
+        [
+          {
+            "node": "Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

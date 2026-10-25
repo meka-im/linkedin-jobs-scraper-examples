@@ -1,8 +1,10 @@
 # Acceptance Notes
 
-This page records how the example was validated and how to maintain evidence for future workflow changes. The machine-readable results for the current snapshot are in [`validation/2026-10-25/n8n-sheets-acceptance.json`](../validation/2026-10-25/n8n-sheets-acceptance.json).
+This page records how the example was validated and how to maintain evidence for future workflow changes. The current one-command, live API, Docker lifecycle, and Cloud two-run results are in [`validation/2026-10-25/one-command-acceptance.json`](../validation/2026-10-25/one-command-acceptance.json). The earlier local n8n measurements remain in [`validation/2026-10-25/n8n-sheets-acceptance.json`](../validation/2026-10-25/n8n-sheets-acceptance.json).
 
-## Validated Snapshot
+The current branch's offline suite passed **70 Node.js tests and 4 Python tests (74 total)** under Node.js `v22.22.0`. The additional four Node.js tests verify the template submission variant's title and sticky copy, executable graph, reproducible build, and absence of embedded private data. This test update does not create another live Actor, n8n Cloud, or Google Sheets execution.
+
+## Historical Local n8n Snapshot
 
 - Date: 2026-10-25 (Asia/Shanghai).
 - Runtime: n8n 2.44.6.
@@ -32,6 +34,8 @@ The two runs used the same exported workflow and two distinct, live Actor runs. 
 All 10 rows that existed before run 2 retained every field, including their original `firstSeenAt` values.
 
 Run 2 appending one new job is evidence that this second real batch added a row; it is not a guarantee that another run will do the same. Search ordering and newly available jobs can change between runs. The workflow deduplicates each fetched batch against the current sheet. It does not provide full-market coverage, promise universal latency, or control the Actor cache.
+
+The later n8n Cloud 2.45.3 Experimental Manual Trigger runs were not schedule-time assertions: they used the instance-default timezone. After those runs, the private workflow was explicitly set to `Etc/UTC`, saved, reopened, and confirmed with the schedule still inactive. No Actor run was repeated for that settings change. The exported source still declares `timezone: "UTC"`, but import behavior must not be treated as proof that this setting was preserved.
 
 ## Supporting Checks
 

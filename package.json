@@ -4,11 +4,23 @@
   "private": true,
   "description": "n8n and API examples for the MEKA LinkedIn Jobs Scraper",
   "type": "module",
+  "bin": {
+    "meka-jobs": "./bin/meka-jobs.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "examples/input.json",
+    "n8n/linkedin-jobs-to-google-sheets.json"
+  ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "build:workflow": "node scripts/build-workflow.mjs && node scripts/build-n8n-smoke.mjs",
+    "build:n8n-template": "node scripts/build-n8n-template.mjs",
+    "meka-jobs": "node bin/meka-jobs.mjs",
+    "test:cli": "node --test tests/cli.test.mjs",
     "test": "node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p '*_test.py'"
   },
   "license": "MIT"

@@ -1,159 +1,163 @@
-# LinkedIn Jobs to Google Sheets with n8n
+<p align="center">
+  <img src="assets/banner.svg" width="1200" alt="MEKA banner: New jobs. One clean sheet. A scheduled flow from n8n to MEKA and Google Sheets.">
+</p>
 
-Runnable examples for finding recent public LinkedIn jobs with the [MEKA LinkedIn Jobs Scraper](https://apify.com/meka.im/linkedin-jobs-scraper), then storing only newly seen jobs in Google Sheets.
+<h1 align="center">LinkedIn Jobs to Google Sheets with n8n</h1>
 
-Use the n8n workflow for a daily sheet, or start with the JavaScript, Python, or cURL API example. All four use built-in runtime features: the API examples have no package dependencies, and the workflow uses built-in n8n nodes.
+<p align="center">
+  Find recent public LinkedIn jobs with MEKA, remove jobs you have already seen, and append the rest to a tidy Google Sheet.
+</p>
 
-**[Download the n8n workflow](n8n/linkedin-jobs-to-google-sheets.json)** · **[Run on Apify](https://apify.com/meka.im/linkedin-jobs-scraper)**
+<p align="center">
+  <a href="https://raw.githubusercontent.com/meka-im/linkedin-jobs-scraper-examples/main/n8n/linkedin-jobs-to-google-sheets.json">
+    <img src="https://img.shields.io/badge/Get_the_n8n_workflow-075cf5?style=for-the-badge&logo=n8n&logoColor=white" alt="Get the n8n workflow">
+  </a>
+  <a href="https://sheets.google.com/create">
+    <img src="https://img.shields.io/badge/Create_a_Google_Sheet-0f9d58?style=for-the-badge&logo=googlesheets&logoColor=white" alt="Create a Google Sheet">
+  </a>
+  <a href="https://apify.com/meka.im/linkedin-jobs-scraper">
+    <img src="https://img.shields.io/badge/Run_on_Apify-061b37?style=for-the-badge" alt="Run on Apify">
+  </a>
+</p>
 
-> **Live validation:** Two consecutive n8n 2.44.6 to Google Sheets acceptance runs passed on 2026-10-25 with distinct live Actor runs. See the [acceptance notes](docs/acceptance.md) and [sanitized measurements](validation/2026-10-25/n8n-sheets-acceptance.json).
+<p align="center">
+  <a href="#quick-start">Quick start</a> &middot;
+  <a href="#how-it-works">How it works</a> &middot;
+  <a href="#api-examples">API examples</a> &middot;
+  <a href="#documentation">Documentation</a>
+</p>
 
-## What is included
+<p align="center">
+  <strong>Import &rarr; connect your accounts &rarr; choose a sheet &rarr; enable.</strong>
+  <a href="docs/setup.md">Cloud-first setup guide</a><br>
+  <sub>Tested with local n8n 2.44.6.</sub>
+</p>
 
-- `n8n/linkedin-jobs-to-google-sheets.json`: inactive n8n workflow with a manual trigger and a daily 08:00 UTC schedule.
-- `examples/input.json`: one small Actor input used by every API example.
-- `examples/javascript.mjs`: Node.js 22+ example using built-in `fetch`.
-- `examples/python.py`: Python 3.10+ standard-library example.
-- `examples/curl.sh`: cURL example using Python only for JSON handling.
-- `sheets/jobs-header.csv`: the exact Google Sheets header expected by the workflow.
-- `tests/`: offline Code-node, export-security, and mock API tests.
-- `docs/acceptance.md`: how to read and maintain the live acceptance evidence.
-- `validation/`: dated, sanitized measurements for completed acceptance runs.
+## Why this workflow
 
-See the [Actor page](https://apify.com/meka.im/linkedin-jobs-scraper) or [MEKA API directory](https://meka.im/apis/linkedin-jobs) for the current Actor details and pricing.
+- **Daily by default.** A manual trigger makes setup testable; an included Schedule Trigger runs at **08:00 UTC** after you activate the workflow.
+- **Incremental by design.** Each run searches a recent window, deduplicates by LinkedIn job `id`, and appends only unseen rows.
+- **Stable first-seen data.** Existing rows are not rewritten, so `firstSeenAt` remains the timestamp when that job first entered your sheet.
+- **Small dependency surface.** The workflow uses built-in n8n nodes. It uses no LLM and no third-party npm packages.
 
-## Quick start with the API
+## How it works
 
-Clone the official examples repository and move into its root directory:
+<p align="center">
+  <img src="assets/workflow-overview.svg" width="1200" alt="Workflow illustration: schedule, run MEKA, read the Jobs sheet, deduplicate by id, and append new rows.">
+</p>
+
+**Schedule -> MEKA -> validate `OUTPUT` -> fetch one batch -> read existing IDs -> append new rows.**
+
+The workflow checks the Actor's `OUTPUT` counters before accepting Dataset items. A clean empty batch means no new IDs were found in that fetched batch; it does not imply full-market coverage.
+
+## Quick start
+
+1. **Import the workflow.** In n8n, choose **Import from URL** and paste the [raw workflow JSON](https://raw.githubusercontent.com/meka-im/linkedin-jobs-scraper-examples/main/n8n/linkedin-jobs-to-google-sheets.json). Alternatively, download the file and choose **Import from File**. Keep it inactive. See [n8n's import guide](https://docs.n8n.io/build/manage-workflows/export-and-import.md).
+
+2. **Connect two accounts.** For Apify, create an **HTTP Header Auth** credential with name `Authorization` and value `Bearer <YOUR_APIFY_TOKEN>`, then select it on **Start Actor**, **Poll Actor Run**, **Get Run Output**, and **Get Dataset Items**. For Google on n8n Cloud, create a **Google Sheets OAuth2** credential, click **Sign in with Google**, and select the same credential on **Read Existing Jobs** and **Append Rows**. Cloud managed OAuth uses your own Google authorization; the workflow contains no token or account ID.
+
+3. **Prepare the sheet and settings.** [Create a blank spreadsheet](https://sheets.google.com/create), rename its worksheet to `Jobs`, and paste the tab-separated header below into cell **A1**. Open **Search settings**, enter the spreadsheet document ID as `sheetId`, keep `sheetName` as `Jobs`, and set your keywords, location, date window, result limit, and spending cap.
+
+4. **Test, inspect, then activate.** Run the workflow manually once and check both the n8n execution and the actual sheet. Only after that succeeds should you choose the intended schedule. The provided schedule is daily at **08:00 UTC**; adjust it if that is not the local time you want.
+
+**Copy this tab-separated header after opening the [TSV file](sheets/jobs-header.tsv):**
+
+```tsv
+id	title	company	location	postedAt	url	salary	employmentType	seniority	firstSeenAt
+```
+
+Paste it into **A1**. Do not paste separately comma-delimited values into A1: Google Sheets may place that text in one cell. The workflow requires these ten exact header names. This guide uses the worksheet name `Jobs`; another tab name works when `sheetName` in **Search settings** matches it. The order above is recommended, while row mapping and deduplication use the header names.
+
+<details>
+<summary><strong>Using self-hosted n8n?</strong></summary>
+
+Self-hosted installations may use a custom Google OAuth2 credential instead of n8n Cloud managed OAuth. Configure the Google Sheets API and Google Drive API, create the required OAuth client in your own Google Cloud project, and complete the provider's security requirements. Do not bypass a Google OAuth warning. The full credential checklist is in [docs/setup.md](docs/setup.md#self-hosted-google-oauth).
+
+</details>
+
+## Deduplication and sheet safety
+
+The workflow searches `pastWeek` so daily runs overlap, reads the current `Jobs` sheet, removes duplicate IDs within the new batch, and appends only IDs that are absent from the sheet. Existing rows are left untouched. Keep one workflow and one sheet writer per deployment; two executions reading and appending at the same time can race and create duplicates.
+
+The append node writes cells as `RAW`, so spreadsheet formulas are not evaluated. A row containing data but no valid `id` stops the execution with an explicit error instead of being treated as empty.
+
+## Output columns
+
+`id`, `title`, `company`, `location`, `postedAt`, `url`, `salary`, `employmentType`, `seniority`, `firstSeenAt`
+
+Missing optional Actor values are stored as empty strings. See [the field-by-field reference](docs/reference.md#output-columns) for sources and behavior.
+
+## Live acceptance evidence
+
+| Run on 2026-10-25 | Fetched | Existing IDs skipped | Appended | Sheet rows |
+| --- | ---: | ---: | ---: | ---: |
+| First run | 10 | 0 | 10 | 0 -> 10 |
+| Second run | 10 | 9 | 1 | 10 -> 11 |
+
+The two complete end-to-end runs used distinct live Actor runs on local n8n 2.44.6. The final sheet had **11 unique IDs and 0 duplicates**. All ten pre-existing rows, including their original `firstSeenAt` values, remained unchanged.
+
+Read the [acceptance notes](docs/acceptance.md) and [sanitized measurements](validation/2026-10-25/n8n-sheets-acceptance.json). These are historical acceptance results, not a guarantee that a later run will append the same number of jobs.
+
+## API examples
+
+The JavaScript, Python, and cURL examples use the same sample input and only runtime or standard-library features. **Choose one command below. Each example starts its own independent Actor run, which may incur charges.**
 
 ```bash
 git clone https://github.com/meka-im/linkedin-jobs-scraper-examples.git
 cd linkedin-jobs-scraper-examples
+export APIFY_TOKEN='<YOUR_APIFY_TOKEN>'
 ```
 
-Create an Apify API token and export it without putting it in a URL or command output:
-
-```bash
-export APIFY_TOKEN='<your-token>'
-```
-
-Run any example from the repository root. Each command reads `examples/input.json` and writes the Dataset items to `jobs.json`.
+<details>
+<summary><strong>JavaScript example</strong> (Node.js 22 or newer)</summary>
 
 ```bash
 node examples/javascript.mjs examples/input.json jobs.json
+```
+
+</details>
+
+<details>
+<summary><strong>Python example</strong> (Python 3.10 or newer)</summary>
+
+```bash
 python3 examples/python.py examples/input.json jobs.json
+```
+
+</details>
+
+<details>
+<summary><strong>cURL example</strong> (cURL plus Python 3.10 or newer)</summary>
+
+```bash
 bash examples/curl.sh examples/input.json jobs.json
 ```
 
-The scripts send `Authorization: Bearer $APIFY_TOKEN`. They do not place the token in a query string or print it. `curl.sh` requires `curl` and Python 3.10+; the other examples use only their language standard library.
+</details>
 
-The sample runs one structured search for `software engineer` in `London, United Kingdom`, limited to jobs posted in the past week. Change `examples/input.json` to use another search.
+Each selected command writes Dataset items to `jobs.json`. Change [examples/input.json](examples/input.json) to use another search. The complete polling, `OUTPUT`, validation, and failure behavior is in [the technical reference](docs/reference.md#api-request-sequence).
 
-## Happy-path request sequence
+## FAQ
 
-Each API example follows the same sequence:
+- **Does this cover every LinkedIn job in a market?** No. Results are bounded by the Actor input, public availability, search ranking, enrichment outcomes, and spending cap. Use focused searches for broader practical coverage.
+- **Is importing the JSON enough?** No. You still supply Apify and Google credentials, create the exact `Jobs` sheet, choose search settings, and test before activation.
+- **Where do keys and Google access live?** In your n8n credentials. The [workflow JSON](n8n/linkedin-jobs-to-google-sheets.json) and repository contain no token, account name, or spreadsheet ID. MEKA does not receive access to your Google credentials.
+- **Is it free?** The example code is MIT licensed, but Apify and n8n may charge for their services. Check current [Actor pricing](https://apify.com/meka.im/linkedin-jobs-scraper) and [n8n pricing](https://n8n.io/pricing/).
 
-1. Send one `POST` to start `meka.im~linkedin-jobs-scraper` with `memory=512`, `timeout=300`, `maxTotalChargeUsd=0.05`, and `waitForFinish=60`.
-2. Poll the started run at most six times while its status is `READY` or `RUNNING`. The start `POST` is never retried automatically, which avoids accidentally starting and charging for another run.
-3. Accept only `SUCCEEDED`. `FAILED`, `TIMED-OUT`, and `ABORTED` fail explicitly.
-4. Read the run's `OUTPUT` summary before the Dataset.
-5. Fail if `failedSearches > 0`. Mark `failedJobDetails > 0`, `failedCompanies > 0`, or `stoppedByBudget: true` as partial coverage.
-6. For a successful run with no failed searches, fetch the Dataset with `format=json`, `clean=true`, and the requested `count`, then validate that every item has a numeric `id`, a non-empty `title`, and a public LinkedIn job `link`.
+## Documentation
 
-A clean empty Dataset is a successful zero-item result for that fetched batch; it does not imply the search covered every matching public job. An empty Dataset is not treated as clean when the Actor summary reports failed searches, failed details, failed companies, or a budget stop.
+- [Setup guide](docs/setup.md): Cloud-first import, credentials, sheet creation, test, and troubleshooting.
+- [Technical reference](docs/reference.md): request sequence, polling, result semantics, failures, security, and tests.
+- [Acceptance notes](docs/acceptance.md): evidence scope and maintenance rules.
+- [Sanitized acceptance measurements](validation/2026-10-25/n8n-sheets-acceptance.json): machine-readable 2026-10-25 results.
+- [Workflow JSON](n8n/linkedin-jobs-to-google-sheets.json): inactive, credential-free n8n import.
+- [Repository tests](tests/): offline mocks for the API examples and embedded n8n Code nodes.
 
-If polling reaches its limit or deadline, the error includes the run ID so the started run can be inspected in Apify. A network failure before the run ID is received cannot return an ID that was never received.
+The exported workflow SHA-256 is `8823e9720a601683197fff35a30586343f58632515e1854d7f13cd417f2299ac`.
 
-## Import the n8n workflow
-
-1. Create a Google Sheets spreadsheet and a worksheet named `Jobs`.
-2. Copy row 1 from `sheets/jobs-header.csv` into the worksheet. Keep these ten columns in order:
-
-   ```text
-   id,title,company,location,postedAt,url,salary,employmentType,seniority,firstSeenAt
-   ```
-
-3. In n8n, choose **Import from File** and import `n8n/linkedin-jobs-to-google-sheets.json`. This is a configurable workflow template, not a one-click hosted automation; complete the credential, sheet, and search settings before running it.
-4. Create an **HTTP Header Auth** credential. Set the header name to `Authorization` and the value to `Bearer <APIFY_TOKEN>`. Select this credential on all four Apify HTTP Request nodes: **Start Actor**, **Poll Actor Run**, **Get Run Output**, and **Get Dataset Items**.
-5. Create or select a **Google Sheets OAuth2** credential. Select the same Google credential on **Read Existing Jobs** and **Append Rows**.
-6. Open **Search settings**. Enter the spreadsheet document ID in `sheetId`, keep `sheetName` set to `Jobs`, and adjust the keywords, location, date window, result limit, and spending cap.
-7. Run the workflow manually and inspect both n8n and the sheet.
-8. Activate the workflow only after the manual test succeeds and you have chosen the intended schedule.
-
-The exported workflow is inactive and contains no credential ID, token, account name, or spreadsheet ID.
-
-### Schedule and timezone
-
-The included Schedule Trigger runs daily at **08:00 UTC**. Change the workflow timezone or trigger hour if that is not the local time you want. Merely importing the workflow does not start scheduled paid runs.
-
-### Deduplication
-
-The workflow searches `pastWeek` so consecutive daily runs overlap. It reads the existing sheet, compares the Actor's `id` values, deduplicates within the current batch, and appends only unseen jobs. Existing rows are not updated, so `firstSeenAt` keeps the date when this workflow first inserted the job.
-
-Use one workflow and one `Jobs` sheet per initial deployment. Do not run multiple workflows against the same sheet at the same time: separate read-then-append executions can race and append the same unseen IDs. This example is intended for serial, modest-volume use.
-
-The Read node has **Always Output Data** enabled, so an empty data area still reaches the deduplication Code node. A truly empty output placeholder is ignored. Any non-empty existing row without an `id` fails with a clear error instead of being treated as an empty sheet. The Google Sheets append node uses a fixed resource-mapper schema for all ten required headers, so a renamed or missing required header is rejected before rows are written. Keep the recommended order when creating a new sheet; the workflow does not rely on ordering for deduplication or row mapping.
-
-### Result semantics
-
-The Actor writes an `OUTPUT` summary for each run. The workflow reads it before accepting any Dataset items:
-
-- Any failed search fails the workflow. This template defaults to one search, so a partial search is not reported as a clean zero-new result.
-- Failed job details, failed company enrichment, or a budget stop produce a partial warning. A run can succeed at the API level while still delivering fewer jobs than requested.
-- Only a run with zero failed searches and no partial-coverage indicators can finish as a complete run. A clean empty Dataset is then a normal zero-new result for that fetched batch, without a claim of complete market coverage.
-
-`count` and `limitPerSource` are caps, not a promise of total market coverage. Search rankings, public availability, enrichment failures, and the spending cap can reduce the number of delivered jobs. For broad coverage, use smaller, targeted searches and a deliberate higher budget rather than assuming one query is exhaustive.
-
-## Output columns
-
-The workflow writes these fields:
-
-| Column | Source |
-| --- | --- |
-| `id` | Public LinkedIn job ID |
-| `title` | Job title |
-| `company` | Public company name when available |
-| `location` | Public location when available |
-| `postedAt` | Public posting date when available |
-| `url` | Public LinkedIn job URL |
-| `salary` | Public salary text when available |
-| `employmentType` | Public employment type when available |
-| `seniority` | Public seniority when available |
-| `firstSeenAt` | ISO timestamp when this workflow first wrote the row |
-
-Missing optional Actor values are stored as empty strings. The append node uses `RAW` cell input so titles, salaries, and other text are not interpreted as formulas.
-
-## Failure behavior
-
-- A start request, status poll, `OUTPUT` request, Dataset request, sheet read, or sheet append that returns an HTTP/API error fails the n8n execution. Failed operations are not counted as zero-new results.
-- `READY` and `RUNNING` continue through a bounded poll loop. The loop ends explicitly when its poll count or deadline is exhausted and includes the run ID in the error.
-- An incorrect or missing sheet schema fails at the append node before writing rows.
-- A successful Actor run with failed searches fails the workflow before Dataset processing.
-
-## Development tests
-
-Run the offline suite:
-
-```bash
-npm test
-```
-
-This requires Node.js 22+ and Python 3.10+ and starts loopback-only mock HTTP servers. It does not call Apify or Google. The suite directly executes the JavaScript embedded in the exported n8n Code nodes with mocked n8n inputs, validates the workflow export for embedded credentials and unsafe retry settings, checks the sample request sequence, and verifies that invalid input makes no start `POST`.
-
-`tests/fixtures/n8n-code-smoke.workflow.json` is a credential-free fixture for running the actual embedded Code nodes in an n8n instance. Its expected result after a separate n8n execution is `status: "passed"`, `pollCount: 2`, `splitItemCount: 2`, and `urlGlobalType: "undefined"`; the last value records the n8n task sandbox behavior that the embedded validators are written around. A VM test is not a substitute for that real-engine run.
-
-Rebuild the exported workflow and smoke fixture after editing `n8n/code/`:
-
-```bash
-npm run build:workflow
-```
-
-## Scope and security
-
-This initial template is not designed for high concurrency, full-market coverage, or multi-writer coordination. It does not use an LLM, send social messages, or modify the Actor. Keep API and OAuth tokens in n8n credentials; do not commit `.env`, `jobs.json`, credential exports, or execution payloads containing private data.
-
-The workflow and examples use public job data. Use them in accordance with applicable laws and LinkedIn's terms.
-
-## License
-
-MIT. See `LICENSE`.
+<p align="center">
+  Built by <a href="https://meka.im">MEKA</a> &middot;
+  <a href="https://github.com/meka-im/linkedin-jobs-scraper-examples">Official repository</a> &middot;
+  <a href="https://github.com/meka-im/linkedin-jobs-scraper-examples/issues">Issues</a> &middot;
+  <a href="LICENSE">MIT License</a>
+</p>

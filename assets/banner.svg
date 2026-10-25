@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="banner-title banner-desc">
+  <title id="banner-title">MEKA LinkedIn Jobs to Google Sheets banner</title>
+  <desc id="banner-desc">New jobs. One clean sheet. A daily data flow moves from Schedule to MEKA to Google Sheets.</desc>
+  <defs>
+    <linearGradient id="page-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f9ff"/>
+      <stop offset="0.62" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f5f9ff"/>
+    </linearGradient>
+    <linearGradient id="me-card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#075cf5"/>
+      <stop offset="1" stop-color="#0647c8"/>
+    </linearGradient>
+    <pattern id="dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#075cf5" opacity="0.10"/>
+    </pattern>
+    <filter id="card-shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#061b37" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="340" rx="34" fill="url(#page-fill)"/>
+  <rect x="1" y="1" width="1198" height="338" rx="33" fill="none" stroke="#dfe9f6" stroke-width="2"/>
+  <path d="M0 268C174 208 278 326 450 284C612 244 694 306 848 263C1004 219 1086 245 1200 204V340H0Z" fill="url(#dot-grid)" aria-hidden="true"/>
+  <circle cx="1124" cy="42" r="88" fill="#075cf5" opacity="0.035" aria-hidden="true"/>
+  <circle cx="535" cy="25" r="4" fill="#075cf5" opacity="0.26" aria-hidden="true"/>
+  <circle cx="566" cy="25" r="4" fill="#075cf5" opacity="0.13" aria-hidden="true"/>
+  <circle cx="597" cy="25" r="4" fill="#075cf5" opacity="0.08" aria-hidden="true"/>
+
+  <g aria-hidden="true">
+    <rect x="68" y="60" width="58" height="58" rx="14" fill="#075cf5"/>
+    <rect x="79" y="71" width="16" height="16" rx="3" fill="#ffffff" opacity="0.95"/>
+    <rect x="99" y="71" width="16" height="16" rx="3" fill="#ffffff" opacity="0.70"/>
+    <rect x="79" y="91" width="16" height="16" rx="3" fill="#ffffff" opacity="0.70"/>
+    <rect x="99" y="91" width="16" height="16" rx="3" fill="#ffffff" opacity="0.95"/>
+    <text x="146" y="100" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" letter-spacing="3">MEKA</text>
+  </g>
+
+  <text x="68" y="151" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="2.4">PUBLIC JOB DATA  /  N8N  /  GOOGLE SHEETS</text>
+  <text x="68" y="210" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="51" font-weight="700" letter-spacing="-1.8">New jobs.</text>
+  <text x="68" y="264" fill="#075cf5" font-family="Arial, Helvetica, sans-serif" font-size="51" font-weight="700" letter-spacing="-1.8">One clean sheet.</text>
+  <text x="70" y="301" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="16">Recent public roles, deduplicated before they reach your spreadsheet.</text>
+
+  <g filter="url(#card-shadow)">
+    <rect x="732" y="60" width="398" height="220" rx="25" fill="#ffffff"/>
+    <rect x="732.5" y="60.5" width="397" height="219" rx="24.5" fill="none" stroke="#dfe9f6"/>
+  </g>
+  <text x="754" y="88" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="2">DAILY DATA FLOW</text>
+
+  <g aria-hidden="true">
+    <rect x="752" y="111" width="92" height="104" rx="16" fill="#f5f9ff" stroke="#dfe9f6"/>
+    <rect x="768" y="127" width="32" height="32" rx="10" fill="#075cf5" opacity="0.10"/>
+    <path d="M777 143H791M786 135L794 143L786 151" fill="none" stroke="#075cf5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="798" y="166" text-anchor="middle" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700">Schedule</text>
+    <text x="798" y="188" text-anchor="middle" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="11">Daily 08:00 UTC</text>
+
+    <path d="M850 163H875" stroke="#8ca8c5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M871 157L878 163L871 169" fill="none" stroke="#8ca8c5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="884" y="111" width="92" height="104" rx="16" fill="url(#me-card)"/>
+    <rect x="916" y="124" width="28" height="28" rx="7" fill="#ffffff" opacity="0.16"/>
+    <rect x="921" y="129" width="7" height="7" rx="1.5" fill="#ffffff" opacity="0.95"/>
+    <rect x="931" y="129" width="7" height="7" rx="1.5" fill="#ffffff" opacity="0.70"/>
+    <rect x="921" y="139" width="7" height="7" rx="1.5" fill="#ffffff" opacity="0.70"/>
+    <rect x="931" y="139" width="7" height="7" rx="1.5" fill="#ffffff" opacity="0.95"/>
+    <text x="930" y="166" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700">MEKA</text>
+    <text x="930" y="188" text-anchor="middle" fill="#ffffff" opacity="0.78" font-family="Arial, Helvetica, sans-serif" font-size="11">Validate OUTPUT</text>
+
+    <path d="M982 163H1007" stroke="#8ca8c5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M1003 157L1010 163L1003 169" fill="none" stroke="#8ca8c5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="1016" y="111" width="92" height="104" rx="16" fill="#f5f9ff" stroke="#dfe9f6"/>
+    <rect x="1034" y="127" width="32" height="32" rx="8" fill="#ffffff" stroke="#dfe9f6"/>
+    <path d="M1047 127V159M1042 134H1054M1042 143H1054M1042 152H1054" stroke="#0f9d58" stroke-width="2" stroke-linecap="round"/>
+    <text x="1062" y="166" text-anchor="middle" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700">Sheets</text>
+    <text x="1062" y="188" text-anchor="middle" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="11">Append unseen</text>
+  </g>
+
+  <rect x="752" y="236" width="356" height="1" fill="#dfe9f6"/>
+  <text x="752" y="260" fill="#061b37" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">Built-in n8n nodes</text>
+  <circle cx="878" cy="256" r="2.5" fill="#075cf5"/>
+  <text x="891" y="260" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">No LLM</text>
+  <circle cx="962" cy="256" r="2.5" fill="#075cf5"/>
+  <text x="975" y="260" fill="#45627f" font-family="Arial, Helvetica, sans-serif" font-size="12">Your credentials</text>
+</svg>

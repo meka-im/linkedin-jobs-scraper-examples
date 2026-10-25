@@ -1,0 +1,499 @@
+{
+  "id": "mekaLinkedInCodeSmoke20261024",
+  "name": "MEKA LinkedIn jobs Code-node smoke",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "smoke-manual",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    keywords: 'software engineer',\n    location: 'London, United Kingdom',\n    datePosted: 'pastWeek',\n    limit: 25,\n    budgetUsd: 0.05,\n    scrapeCompany: false,\n    sheetId: 'smoke_sheet_id',\n    sheetName: 'Jobs'\n  }\n}];\n"
+      },
+      "id": "smoke-settings",
+      "name": "Fixture Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const config = $input.first()?.json ?? {};\n\nfunction requiredText(value, name) {\n  if (typeof value !== 'string' || !value.trim()) {\n    throw new Error(`${name} must be a non-empty string`);\n  }\n  return value.trim();\n}\n\nfunction positiveInteger(value, name, maximum) {\n  if (!Number.isInteger(value) || value < 1 || value > maximum) {\n    throw new Error(`${name} must be an integer from 1 to ${maximum}`);\n  }\n  return value;\n}\n\nconst datePostedValues = new Set(['anyTime', 'past24Hours', 'pastWeek', 'pastMonth']);\nconst datePosted = requiredText(config.datePosted, 'datePosted');\nif (!datePostedValues.has(datePosted)) {\n  throw new Error(`datePosted must be one of ${[...datePostedValues].join(', ')}`);\n}\n\nconst budgetUsd = Number(config.budgetUsd);\nif (!Number.isFinite(budgetUsd) || budgetUsd <= 0) {\n  throw new Error('budgetUsd must be a positive number');\n}\n\nconst limit = positiveInteger(config.limit, 'limit', 1000);\nconst sheetId = requiredText(config.sheetId, 'sheetId');\nif (!/^[A-Za-z0-9_-]{2,}$/.test(sheetId)) {\n  throw new Error('sheetId must be the Google Sheets document ID');\n}\n\nreturn [{\n  json: {\n    keywords: requiredText(config.keywords, 'keywords'),\n    location: requiredText(config.location, 'location'),\n    datePosted,\n    limit,\n    count: limit,\n    limitPerSource: limit,\n    scrapeCompany: config.scrapeCompany === true,\n    budgetUsd,\n    sheetId,\n    sheetName: requiredText(config.sheetName, 'sheetName'),\n    actorTimeoutSeconds: 300,\n    waitForFinishSeconds: 60,\n    pollDelaySeconds: 5,\n    maxPollAttempts: 6,\n    runDeadlineEpochMs: Date.now() + 480_000,\n  },\n}];\n"
+      },
+      "id": "smoke-validation",
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    body: {\n      data: {\n        id: 'smoke-run',\n        status: 'RUNNING',\n        defaultDatasetId: 'smoke-dataset'\n      }\n    }\n  }\n}];\n"
+      },
+      "id": "smoke-start-response",
+      "name": "Start Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst settings = $('Input Validation').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error('Apify start response was not valid JSON');\n  }\n}\n\nconst run = body?.data ?? body;\nif (!run || typeof run !== 'object') {\n  throw new Error('Apify start response did not contain a run');\n}\n\nconst runId = String(run.id ?? '').trim();\nif (!runId) {\n  throw new Error('Apify start response did not contain a run ID');\n}\n\nconst status = String(run.status ?? '').trim().toUpperCase();\nconst datasetId = String(run.defaultDatasetId ?? '').trim();\nconst state = {\n  ...settings,\n  runId,\n  datasetId,\n  status,\n  pollCount: 0,\n};\n\nif (status === 'SUCCEEDED') {\n  if (!datasetId) {\n    throw new Error(`Actor run ${runId} succeeded without a defaultDatasetId`);\n  }\n  return [{ json: { ...state, nextAction: 'fetch' } }];\n}\n\nif (status === 'READY' || status === 'RUNNING') {\n  if (Date.now() >= settings.runDeadlineEpochMs) {\n    throw new Error(`Actor run ${runId} is still ${status} after the local deadline. Recovery run ID: ${runId}`);\n  }\n  return [{ json: { ...state, nextAction: 'poll' } }];\n}\n\nthrow new Error(`Actor run ${runId} ended with status ${status || 'UNKNOWN'}. Recovery run ID: ${runId}`);\n"
+      },
+      "id": "smoke-assess-start",
+      "name": "Assess Start Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all();\n"
+      },
+      "id": "smoke-wait",
+      "name": "Wait for Actor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const state = $('Wait for Actor').first()?.json ?? {};\nconst nextPoll = Number(state.pollCount ?? 0) + 1;\nreturn [{\n  json: {\n    body: {\n      data: {\n        id: state.runId,\n        status: nextPoll >= 2 ? 'SUCCEEDED' : 'RUNNING',\n        defaultDatasetId: state.datasetId\n      }\n    }\n  }\n}];\n"
+      },
+      "id": "smoke-poll-response",
+      "name": "Poll Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const previous = $('Wait for Actor').first()?.json ?? {};\nconst response = $input.first()?.json ?? {};\nconst settings = $('Input Validation').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Apify poll response for run ${previous.runId ?? 'UNKNOWN'} was not valid JSON`);\n  }\n}\n\nconst run = body?.data ?? body;\nif (!run || typeof run !== 'object') {\n  throw new Error(`Apify poll response did not contain run ${previous.runId ?? 'UNKNOWN'}`);\n}\n\nconst runId = String(run.id ?? previous.runId ?? '').trim();\nif (!runId || runId !== previous.runId) {\n  throw new Error(`Apify poll response changed or omitted run ID ${previous.runId ?? 'UNKNOWN'}`);\n}\n\nconst status = String(run.status ?? '').trim().toUpperCase();\nconst datasetId = String(run.defaultDatasetId ?? previous.datasetId ?? '').trim();\nconst pollCount = Number(previous.pollCount ?? 0) + 1;\nconst state = {\n  ...previous,\n  status,\n  datasetId,\n  pollCount,\n};\n\nif (status === 'SUCCEEDED') {\n  if (!datasetId) {\n    throw new Error(`Actor run ${runId} succeeded without a defaultDatasetId`);\n  }\n  return [{ json: { ...state, nextAction: 'fetch' } }];\n}\n\nif (status === 'READY' || status === 'RUNNING') {\n  if (Date.now() >= settings.runDeadlineEpochMs) {\n    throw new Error(`Actor run ${runId} is still ${status} after the local deadline. Recovery run ID: ${runId}`);\n  }\n  if (pollCount >= settings.maxPollAttempts) {\n    throw new Error(`Actor run ${runId} did not finish after ${pollCount} polls. Recovery run ID: ${runId}`);\n  }\n  return [{ json: { ...state, nextAction: 'poll' } }];\n}\n\nthrow new Error(`Actor run ${runId} ended with status ${status || 'UNKNOWN'}. Recovery run ID: ${runId}`);\n"
+      },
+      "id": "smoke-assess-poll",
+      "name": "Assess Polled Run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "smoke-success-if-condition",
+              "leftValue": "={{ $json.nextAction === 'fetch' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "smoke-success-if",
+      "name": "Is Run Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    body: {\n      status: 'completed',\n      delivered: 2,\n      uniqueJobs: 2,\n      searchPages: 1,\n      failedSearches: 0,\n      failedJobDetails: 0,\n      failedCompanies: 0,\n      stoppedByBudget: false,\n      cacheHits: 0\n    }\n  }\n}];\n"
+      },
+      "id": "smoke-output-response",
+      "name": "Run Output Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst state = $('Is Run Succeeded?').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} returned an invalid OUTPUT summary`);\n  }\n}\nconst summary = body?.data ?? body;\nif (!summary || typeof summary !== 'object' || Array.isArray(summary)) {\n  throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} returned an invalid OUTPUT summary`);\n}\n\nconst numericFields = [\n  'delivered',\n  'uniqueJobs',\n  'searchPages',\n  'failedSearches',\n  'failedJobDetails',\n  'failedCompanies',\n  'cacheHits',\n];\nconst clean = { status: String(summary.status ?? '') };\nfor (const field of numericFields) {\n  const value = summary[field];\n  if (!Number.isInteger(value) || value < 0) {\n    throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} OUTPUT summary has an invalid ${field}`);\n  }\n  clean[field] = value;\n}\nif (typeof summary.stoppedByBudget !== 'boolean') {\n  throw new Error(`Actor run ${state.runId ?? 'UNKNOWN'} OUTPUT summary has an invalid stoppedByBudget`);\n}\nclean.stoppedByBudget = summary.stoppedByBudget;\n\nif (clean.failedSearches > 0) {\n  throw new Error(\n    `Actor run ${state.runId ?? 'UNKNOWN'} completed with ${clean.failedSearches} failed search(es); no dataset was accepted. Recovery run ID: ${state.runId ?? 'UNKNOWN'}`,\n  );\n}\n\nclean.coverage = (\n  clean.failedJobDetails > 0\n  || clean.failedCompanies > 0\n  || clean.stoppedByBudget\n) ? 'partial' : 'complete';\n\nreturn [{\n  json: {\n    ...state,\n    actorSummary: clean,\n    coverage: clean.coverage,\n  },\n}];\n"
+      },
+      "id": "smoke-assess-output",
+      "name": "Assess Run Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    body: [\n      {\n        id: '1001',\n        title: 'Smoke Test Engineer',\n        companyName: 'Example Co',\n        location: 'London, United Kingdom',\n        postedAt: '2026-10-24',\n        link: 'https://www.linkedin.com/jobs/view/ing%C3%A9nieur%20logiciel-1001?keywords=software%20engineer',\n        salary: '',\n        employmentType: 'Full-time',\n        seniorityLevel: 'Mid-Senior level'\n      },\n      {\n        id: '1002',\n        title: 'Second Smoke Test Engineer',\n        companyName: 'Example Co',\n        location: 'London, United Kingdom',\n        postedAt: '2026-10-24',\n        link: 'https://uk.linkedin.com/jobs/view/développeur-logiciel-1002',\n        salary: '',\n        employmentType: 'Full-time',\n        seniorityLevel: 'Mid-Senior level'\n      }\n    ]\n  }\n}];\n"
+      },
+      "id": "smoke-dataset-response",
+      "name": "Dataset Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first()?.json ?? {};\nconst run = $('Assess Run Output').first()?.json ?? {};\n\nlet body = response.body !== undefined ? response.body : response;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch {\n    throw new Error(`Dataset ${run.datasetId ?? 'UNKNOWN'} did not return valid JSON`);\n  }\n}\nif (!Array.isArray(body) && Array.isArray(body?.data)) {\n  body = body.data;\n}\nif (!Array.isArray(body)) {\n  throw new Error(`Dataset ${run.datasetId ?? 'UNKNOWN'} response must be an array`);\n}\n\nfunction text(value) {\n  return value == null ? '' : String(value).trim();\n}\n\nfunction linkedInJobPathId(link, label) {\n  if (\n    typeof link !== 'string'\n    || link !== link.trim()\n    || /[\\s\\\\\\u0000-\\u001f\\u007f-\\u009f]/u.test(link)\n    || /%(?![0-9a-f]{2})/iu.test(link)\n  ) {\n    throw new Error(`${label} has an invalid link`);\n  }\n\n  for (const match of link.matchAll(/%([0-9a-f]{2})/giu)) {\n    const byte = Number.parseInt(match[1], 16);\n    if (byte < 0x20 || byte === 0x5c || byte === 0x7f) {\n      throw new Error(`${label} has an unsafe percent-encoded character in its link`);\n    }\n  }\n\n  if (!/^https:\\/\\//i.test(link)) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n  const rest = link.slice('https://'.length);\n  const suffixStart = rest.search(/[?#]/);\n  const authorityAndPath = suffixStart === -1 ? rest : rest.slice(0, suffixStart);\n  const slash = authorityAndPath.indexOf('/');\n  if (slash <= 0) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n\n  const authority = authorityAndPath.slice(0, slash);\n  if (\n    authority.includes('@')\n    || authority.includes(':')\n    || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*linkedin\\.com$/i.test(authority)\n  ) {\n    throw new Error(`${label} link must use a public LinkedIn HTTPS authority`);\n  }\n\n  const path = authorityAndPath.slice(slash);\n  const prefix = '/jobs/view/';\n  if (!path.startsWith(prefix)) {\n    throw new Error(`${label} link must be a LinkedIn job view URL`);\n  }\n  let slug = path.slice(prefix.length);\n  if (slug.endsWith('/')) slug = slug.slice(0, -1);\n  if (!slug || slug.includes('/')) {\n    throw new Error(`${label} link must contain one non-empty job slug`);\n  }\n\n  const pathIdMatch = /(?:^|[-_])([0-9]+)$/.exec(slug);\n  if (!pathIdMatch) {\n    throw new Error(`${label} link does not end with a numeric job ID`);\n  }\n  return pathIdMatch[1];\n}\n\nfunction requirePublicJob(item, index) {\n  if (!item || typeof item !== 'object' || Array.isArray(item)) {\n    throw new Error(`Dataset item ${index} is not an object`);\n  }\n  const id = text(item.id);\n  const title = text(item.title);\n  const link = item.link;\n  if (!/^[0-9]+$/.test(id)) {\n    throw new Error(`Dataset item ${index} has an invalid id`);\n  }\n  if (!title) {\n    throw new Error(`Dataset item ${index} is missing title`);\n  }\n  const pathId = linkedInJobPathId(link, `Dataset item ${index}`);\n  if (pathId !== id) {\n    throw new Error(`Dataset item ${index} link job ID does not match its id`);\n  }\n  return { id, title, link };\n}\n\nconst firstSeenAt = new Date().toISOString();\nconst jobs = body.map((item, index) => {\n  const publicJob = requirePublicJob(item, index);\n  return {\n    id: publicJob.id,\n    title: publicJob.title,\n    company: text(item.companyName),\n    location: text(item.location),\n    postedAt: text(item.postedAt),\n    url: publicJob.link,\n    salary: text(item.salary),\n    employmentType: text(item.employmentType),\n    seniority: text(item.seniorityLevel),\n    firstSeenAt,\n  };\n});\n\nreturn [{\n  json: {\n    jobs,\n    runId: run.runId,\n    datasetId: run.datasetId,\n    status: run.status,\n    count: run.count,\n    sheetId: run.sheetId,\n    sheetName: run.sheetName,\n    actorSummary: run.actorSummary,\n    coverage: run.coverage,\n    fetchedCount: jobs.length,\n  },\n}];\n"
+      },
+      "id": "smoke-normalize",
+      "name": "Normalize Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: { row_number: 2 } }];\n"
+      },
+      "id": "smoke-empty-sheet",
+      "name": "Empty Sheet Placeholder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const source = $('Normalize Jobs').first()?.json ?? {};\nconst tableItems = $input.all();\n\nfunction text(value) {\n  return value == null ? '' : String(value).trim();\n}\n\nfunction linkedInJobPathId(link, label) {\n  if (\n    typeof link !== 'string'\n    || link !== link.trim()\n    || /[\\s\\\\\\u0000-\\u001f\\u007f-\\u009f]/u.test(link)\n    || /%(?![0-9a-f]{2})/iu.test(link)\n  ) {\n    throw new Error(`${label} has an invalid link`);\n  }\n\n  for (const match of link.matchAll(/%([0-9a-f]{2})/giu)) {\n    const byte = Number.parseInt(match[1], 16);\n    if (byte < 0x20 || byte === 0x5c || byte === 0x7f) {\n      throw new Error(`${label} has an unsafe percent-encoded character in its link`);\n    }\n  }\n\n  if (!/^https:\\/\\//i.test(link)) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n  const rest = link.slice('https://'.length);\n  const suffixStart = rest.search(/[?#]/);\n  const authorityAndPath = suffixStart === -1 ? rest : rest.slice(0, suffixStart);\n  const slash = authorityAndPath.indexOf('/');\n  if (slash <= 0) {\n    throw new Error(`${label} link must be a public LinkedIn HTTPS URL in /jobs/view/<job-id> form`);\n  }\n\n  const authority = authorityAndPath.slice(0, slash);\n  if (\n    authority.includes('@')\n    || authority.includes(':')\n    || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*linkedin\\.com$/i.test(authority)\n  ) {\n    throw new Error(`${label} link must use a public LinkedIn HTTPS authority`);\n  }\n\n  const path = authorityAndPath.slice(slash);\n  const prefix = '/jobs/view/';\n  if (!path.startsWith(prefix)) {\n    throw new Error(`${label} link must be a LinkedIn job view URL`);\n  }\n  let slug = path.slice(prefix.length);\n  if (slug.endsWith('/')) slug = slug.slice(0, -1);\n  if (!slug || slug.includes('/')) {\n    throw new Error(`${label} link must contain one non-empty job slug`);\n  }\n\n  const pathIdMatch = /(?:^|[-_])([0-9]+)$/.exec(slug);\n  if (!pathIdMatch) {\n    throw new Error(`${label} link does not end with a numeric job ID`);\n  }\n  return pathIdMatch[1];\n}\n\nfunction publicId(value, label) {\n  const id = text(value);\n  if (!/^[0-9]+$/.test(id)) {\n    throw new Error(`${label} has an invalid id`);\n  }\n  return id;\n}\n\nfunction validateJob(job, index) {\n  if (!job || typeof job !== 'object' || Array.isArray(job)) {\n    throw new Error(`Normalized job ${index} is not an object`);\n  }\n  const id = publicId(job.id, `Normalized job ${index}`);\n  if (typeof job.title !== 'string' || !job.title.trim()) {\n    throw new Error(`Normalized job ${index} is missing title`);\n  }\n  if (typeof job.url !== 'string') {\n    throw new Error(`Normalized job ${index} is missing link`);\n  }\n  const pathId = linkedInJobPathId(job.url, `Normalized job ${index}`);\n  if (pathId !== id) {\n    throw new Error(`Normalized job ${index} link job ID does not match its id`);\n  }\n  return id;\n}\n\nif (!Array.isArray(source.jobs)) {\n  throw new Error('Normalize Jobs did not return a jobs array');\n}\n\nconst existingIds = new Set();\ntableItems.forEach((item, rowIndex) => {\n  const row = item?.json ?? {};\n  const values = Object.entries(row)\n    .filter(([key]) => key !== 'row_number')\n    .map(([, value]) => value);\n  const rowIsEmpty = values.every((value) => value == null || text(value) === '');\n  if (rowIsEmpty) return;\n  if (row.id == null || text(row.id) === '') {\n    const sheetRow = text(row.row_number) || String(rowIndex + 1);\n    throw new Error(`Existing sheet row ${sheetRow} has data but no id`);\n  }\n  existingIds.add(publicId(row.id, 'Existing sheet row'));\n});\n\nconst fetchedIds = new Set();\nconst newJobs = [];\nlet skippedExisting = 0;\nlet skippedBatchDuplicates = 0;\n\nsource.jobs.forEach((job, index) => {\n  const id = validateJob(job, index);\n  if (existingIds.has(id)) {\n    skippedExisting += 1;\n  } else if (fetchedIds.has(id)) {\n    skippedBatchDuplicates += 1;\n  } else {\n    fetchedIds.add(id);\n    newJobs.push(job);\n  }\n});\n\nconst summary = {\n  runId: source.runId,\n  datasetId: source.datasetId,\n  actorSummary: source.actorSummary,\n  coverage: source.coverage,\n  fetchedCount: source.jobs.length,\n  newCount: newJobs.length,\n  skippedExisting,\n  skippedBatchDuplicates,\n  hasNewJobs: newJobs.length > 0,\n};\n\nreturn [{ json: { newJobs, summary, hasNewJobs: summary.hasNewJobs } }];\n"
+      },
+      "id": "smoke-filter",
+      "name": "Filter New IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "smoke-new-if-condition",
+              "leftValue": "={{ $json.hasNewJobs }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "smoke-new-if",
+      "name": "Has New Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2400,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "newJobs",
+        "options": {}
+      },
+      "id": "smoke-split",
+      "name": "Split Out New Jobs",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const pollState = $('Assess Polled Run').first()?.json ?? {};\nconst outputState = $('Assess Run Output').first()?.json ?? {};\nconst normalized = $('Normalize Jobs').first()?.json ?? {};\nconst filtered = $('Filter New IDs').first()?.json ?? {};\nconst flatItems = $input.all();\n\nif (pollState.pollCount !== 2 || pollState.status !== 'SUCCEEDED') {\n  throw new Error('Expected the latest poll state to be SUCCEEDED after two polls');\n}\nif (outputState.pollCount !== 2 || outputState.runId !== 'smoke-run') {\n  throw new Error('Assess Run Output did not recover the latest poll state');\n}\nif (normalized.fetchedCount !== 2 || normalized.jobs.length !== 2) {\n  throw new Error('Normalize Jobs did not produce two jobs');\n}\nif (filtered.summary.newCount !== 2 || filtered.summary.skippedExisting !== 0) {\n  throw new Error('Filter New IDs did not treat the row_number-only placeholder as empty');\n}\nif (flatItems.length !== 2) {\n  throw new Error('Split Out New Jobs did not emit two flat items');\n}\n\nfor (const [index, item] of flatItems.entries()) {\n  const flat = item.json ?? {};\n  if (!flat.id || flat.jobs || flat.newJobs) {\n    throw new Error('Split Out New Jobs item ' + index + ' is not a flat job');\n  }\n  const urlPath = flat.url.replace(/[?#].*$/, '');\n  const pathId = /(?:^|[-_])([0-9]+)$/.exec(urlPath)?.[1];\n  if (pathId !== flat.id) {\n    throw new Error('Split Out New Jobs item ' + index + ' has a URL job ID mismatch');\n  }\n}\n\nreturn [{\n  json: {\n    status: 'passed',\n    runId: outputState.runId,\n    pollCount: pollState.pollCount,\n    splitItemCount: flatItems.length,\n    splitItemIds: flatItems.map((item) => item.json?.id),\n    normalizedCount: normalized.fetchedCount,\n    newCount: filtered.summary.newCount,\n    coverage: outputState.coverage,\n    urlGlobalType: typeof URL\n  }\n}];\n"
+      },
+      "id": "smoke-verify",
+      "name": "Verify Smoke Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        -240
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fixture Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fixture Settings": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Start Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Response": {
+      "main": [
+        [
+          {
+            "node": "Assess Start Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Start Run": {
+      "main": [
+        [
+          {
+            "node": "Wait for Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Actor": {
+      "main": [
+        [
+          {
+            "node": "Poll Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Response": {
+      "main": [
+        [
+          {
+            "node": "Assess Polled Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Polled Run": {
+      "main": [
+        [
+          {
+            "node": "Is Run Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Run Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Run Output Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Output Response": {
+      "main": [
+        [
+          {
+            "node": "Assess Run Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assess Run Output": {
+      "main": [
+        [
+          {
+            "node": "Dataset Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dataset Response": {
+      "main": [
+        [
+          {
+            "node": "Normalize Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Jobs": {
+      "main": [
+        [
+          {
+            "node": "Empty Sheet Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Empty Sheet Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Filter New IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New IDs": {
+      "main": [
+        [
+          {
+            "node": "Has New Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Split Out New Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out New Jobs": {
+      "main": [
+        [
+          {
+            "node": "Verify Smoke Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="76" viewBox="0 0 460 76" role="img" aria-labelledby="install-title install-desc">
+  <title id="install-title">Install to n8n Cloud</title>
+  <desc id="install-desc">Open the MEKA hosted installer for n8n Cloud.</desc>
+  <rect x="1" y="1" width="458" height="74" rx="18" fill="#075cf5" stroke="#064bc9" stroke-width="2"/>
+  <rect x="28" y="22" width="32" height="32" rx="8" fill="#ffffff" fill-opacity="0.16"/>
+  <rect x="33.5" y="27.5" width="9" height="9" rx="2" fill="#ffffff"/>
+  <rect x="45.5" y="27.5" width="9" height="9" rx="2" fill="#ffffff" fill-opacity="0.70"/>
+  <rect x="33.5" y="39.5" width="9" height="9" rx="2" fill="#ffffff" fill-opacity="0.70"/>
+  <rect x="45.5" y="39.5" width="9" height="9" rx="2" fill="#ffffff"/>
+  <text x="78" y="47" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Install to n8n Cloud</text>
+  <path d="M403 38H421M414 30L422 38L414 46" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.app.n8n.cloud; base-uri 'none'; form-action 'self' https://*.app.n8n.cloud; object-src 'none'; worker-src 'none'"
+    >
+    <meta name="referrer" content="no-referrer">
+    <title>MEKA n8n Cloud installer</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="MEKA installer home">
+        <span class="brand-mark" aria-hidden="true">
+          <i></i><i></i><i></i><i></i>
+        </span>
+        <span>MEKA</span>
+      </a>
+      <span class="edition">n8n Cloud installer</span>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">LinkedIn jobs → Google Sheets</p>
+          <h1>Install to n8n Cloud</h1>
+          <p class="lede">Daily LinkedIn jobs. One clean Google Sheet.</p>
+          <ol class="steps" aria-label="Installer progress">
+            <li id="step-workspace" class="active">Workspace</li>
+            <li id="step-connect">Connect</li>
+            <li id="step-search">Search</li>
+            <li id="step-install">Install &amp; verify</li>
+          </ol>
+        </div>
+        <img class="banner" src="assets/banner.svg" alt="MEKA LinkedIn Jobs workflow">
+      </section>
+
+      <section id="status-panel" class="panel status-panel" aria-live="polite" hidden>
+        <span id="status-icon" class="status-icon" aria-hidden="true"></span>
+        <div>
+          <h2 id="status-title"></h2>
+          <p id="status-message"></p>
+          <div id="status-actions" class="actions"></div>
+        </div>
+      </section>
+
+      <section id="workspace-panel" class="panel">
+        <div class="panel-heading">
+          <span class="panel-number">01</span>
+          <div>
+            <h2>Choose your n8n Cloud workspace</h2>
+            <p>Use the exact HTTPS address from your n8n Cloud login.</p>
+          </div>
+        </div>
+        <form id="workspace-form" class="stack">
+          <label for="workspace-url">Workspace address</label>
+          <input
+            id="workspace-url"
+            name="workspace"
+            type="url"
+            inputmode="url"
+            autocomplete="url"
+            spellcheck="false"
+            placeholder="https://your-workspace.app.n8n.cloud"
+            required
+          >
+          <p class="field-help">Only <code>*.app.n8n.cloud</code> workspaces are accepted.</p>
+          <button id="connect-button" class="button primary" type="submit">
+            Continue to n8n
+          </button>
+        </form>
+        <aside class="notice">
+          <strong>First time using MCP?</strong>
+          An n8n workspace administrator must enable MCP access in
+          <a id="mcp-settings-link" href="#" rel="noreferrer">Settings → MCP</a>.
+          This installer never enables it for you.
+        </aside>
+      </section>
+
+      <section id="setup-panel" class="panel" hidden>
+        <div class="panel-heading">
+          <span class="panel-number">02</span>
+          <div>
+            <h2>Connect accounts and choose the search</h2>
+            <p id="workspace-summary"></p>
+          </div>
+        </div>
+
+        <div id="credential-block" class="subpanel">
+          <div class="subpanel-heading">
+            <div>
+              <h3>OAuth credentials</h3>
+              <p>Select one existing credential of each type. Credential secrets stay inside n8n.</p>
+            </div>
+            <button id="refresh-credentials" class="button quiet" type="button">Refresh</button>
+          </div>
+          <div class="grid two">
+            <label>
+              Apify OAuth
+              <select id="apify-credential" required></select>
+            </label>
+            <label>
+              Google Sheets OAuth
+              <select id="google-credential" required></select>
+            </label>
+          </div>
+          <div id="credential-help" class="credential-help"></div>
+        </div>
+
+        <form id="install-form" class="stack">
+          <div class="section-title">
+            <h3>Search</h3>
+            <p>Keywords and location are the two fields most people change.</p>
+          </div>
+          <div class="grid two">
+            <label>
+              Keywords
+              <input id="keywords" name="keywords" type="text" value="software engineer" required>
+            </label>
+            <label>
+              Location
+              <input id="location" name="location" type="text" value="London, United Kingdom" required>
+            </label>
+          </div>
+
+          <details class="advanced">
+            <summary>Advanced settings</summary>
+            <div class="grid two advanced-grid">
+              <label>
+                Date posted
+                <select id="date-posted" name="datePosted">
+                  <option value="pastWeek" selected>Past week</option>
+                  <option value="past24Hours">Past 24 hours</option>
+                  <option value="pastMonth">Past month</option>
+                  <option value="anyTime">Any time</option>
+                </select>
+              </label>
+              <label>
+                Result limit per source
+                <input id="limit" name="limit" type="number" min="1" max="1000" step="1" value="10" required>
+              </label>
+              <label>
+                Actor spending cap (USD)
+                <input id="budget" name="budgetUsd" type="number" min="0.000001" step="any" value="0.05" required>
+              </label>
+              <label>
+                Spreadsheet title
+                <input id="spreadsheet-title" name="spreadsheetTitle" type="text" maxlength="200" value="LinkedIn jobs" required>
+              </label>
+              <label class="check-row">
+                <input id="scrape-company" name="scrapeCompany" type="checkbox">
+                Enrich company details
+              </label>
+            </div>
+          </details>
+
+          <div class="section-title">
+            <h3>Workflow name</h3>
+            <p>The installer appends a short unique marker so an interrupted request can be checked safely.</p>
+          </div>
+          <label>
+            Name
+            <input id="workflow-name" name="workflowName" type="text" maxlength="115" value="MEKA LinkedIn Jobs" required>
+          </label>
+          <p class="field-help">The name must begin with <code>MEKA</code>.</p>
+
+          <div class="install-note">
+            <strong>What the installer will do</strong>
+            <span>Create one inactive workflow and verify its graph. It will not run the Actor, start a paid request, or publish the schedule.</span>
+          </div>
+          <p class="fine-print">
+            n8n's consent grants workflow read/write and credential read so this page can validate,
+            create, and read back this workflow. The installer does not call execute, publish,
+            archive, or delete tools.
+          </p>
+          <button id="install-button" class="button primary large" type="submit">
+            Install inactive workflow
+          </button>
+        </form>
+      </section>
+
+      <section id="recovery-panel" class="panel" hidden>
+        <div class="panel-heading">
+          <span class="panel-number">!</span>
+          <div>
+            <h2>Check the interrupted installation</h2>
+            <p>A create request may already have reached n8n. Do not submit a second installation.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <label>
+            Existing workflow ID, if n8n shows one
+            <input id="recovery-id" type="text" autocomplete="off" spellcheck="false">
+          </label>
+          <button id="recovery-button" class="button primary" type="button">Check installation status</button>
+          <a id="open-existing" class="button quiet" href="#" target="_blank" rel="noopener noreferrer" hidden>
+            Open existing workflow in n8n
+          </a>
+          <p class="field-help">
+            Without an ID, the installer searches only for the unique workflow name generated for this attempt.
+          </p>
+        </div>
+      </section>
+
+      <section id="success-panel" class="panel success-panel" hidden>
+        <div class="success-mark" aria-hidden="true">✓</div>
+        <p class="eyebrow">Installation verified</p>
+        <h2 id="success-title"></h2>
+        <p id="success-message"></p>
+        <dl class="facts">
+          <div><dt>Nodes</dt><dd>41</dd></div>
+          <div><dt>Connections</dt><dd>39</dd></div>
+          <div><dt>Schedule</dt><dd>Inactive</dd></div>
+          <div><dt>Timezone</dt><dd>UTC</dd></div>
+        </dl>
+        <p class="fine-print">
+          n8n validated all 14 credential references before creation. Its read-only workflow response
+          intentionally omits credential IDs, so the final graph check does not expose them.
+          n8n also exposes this created copy to MCP with <code>availableInMCP=true</code>; the
+          installer does not enumerate unrelated workflows.
+        </p>
+        <a id="open-workflow" class="button primary large" href="#" target="_blank" rel="noopener noreferrer">
+          Open in n8n
+        </a>
+        <div class="next-steps">
+          <h3>Before the first manual run</h3>
+          <ol>
+            <li>Review the workflow timezone and what 08:00 means for your schedule.</li>
+            <li>Confirm both OAuth credentials allow HTTP requests only to the required domains.</li>
+            <li>Run the Manual Trigger and inspect the created spreadsheet. Publish only after that test.</li>
+          </ol>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          OAuth access tokens stay in this tab's memory and are sent for active requests to the selected
+          n8n workspace and the same-origin MEKA installer relay. The relay does not store them.
+          This page has no analytics or third-party scripts.
+        </p>
+        <p>Apify and n8n Cloud may charge for their services. The workflow stays inactive until you publish it.</p>
+      </footer>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

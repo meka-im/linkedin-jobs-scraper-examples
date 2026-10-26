@@ -52,17 +52,16 @@ test('public asset build copies only browser files and the shared four-square ba
   assert.match(html, /class="brand-mark"[\s\S]*<i><\/i>[\s\S]*<i><\/i>[\s\S]*<i><\/i>[\s\S]*<i><\/i>/u);
 });
 
-test('Worker configuration uses the MEKA custom domain and keeps default endpoints disabled', async () => {
+test('Worker configuration is private behind the MEKA site service binding', async () => {
   const config = await readFile(path.join(root, 'installer', 'wrangler.toml'), 'utf8');
   assert.match(config, /^name\s*=\s*"meka-n8n-installer"$/mu);
   assert.match(config, /^main\s*=\s*"worker\/index\.mjs"$/mu);
   assert.match(config, /^workers_dev\s*=\s*false$/mu);
   assert.match(config, /^preview_urls\s*=\s*false$/mu);
-  assert.match(
-    config,
-    /^routes\s*=\s*\[\s*\{\s*pattern\s*=\s*"install\.meka\.im"\s*,\s*custom_domain\s*=\s*true\s*\}\s*\]$/mu,
-  );
-  assert.equal((config.match(/^\s*\{\s*pattern\s*=/gmu) ?? []).length, 1);
+  assert.match(config, /^routes\s*=\s*\[\s*\]$/mu);
+  assert.doesNotMatch(config, /custom_domain/u);
+  assert.doesNotMatch(config, /install\.meka\.im/u);
+  assert.equal((config.match(/^\s*\{\s*pattern\s*=/gmu) ?? []).length, 0);
   assert.doesNotMatch(config, /workers\.dev/u);
   assert.match(config, /^run_worker_first\s*=\s*true$/mu);
   assert.match(

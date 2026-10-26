@@ -1,6 +1,12 @@
 name = "meka-n8n-installer"
 main = "worker/index.mjs"
 compatibility_date = "2025-06-01"
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "install.meka.im", custom_domain = true }
+]
 
 [assets]
 directory = "./dist"

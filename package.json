@@ -20,8 +20,11 @@
     "build:cloud": "node scripts/build-cloud-workflow.mjs",
     "build:workflow": "node scripts/build-workflow.mjs && node scripts/build-n8n-smoke.mjs",
     "build:n8n-template": "node scripts/build-n8n-template.mjs",
+    "installer:build": "npm --prefix installer run build",
+    "installer:start": "node installer/server.mjs",
     "meka-jobs": "node bin/meka-jobs.mjs",
     "test:cli": "node --test tests/cli.test.mjs",
+    "test:installer": "node --test tests/installer*.test.mjs",
     "test": "node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p '*_test.py'"
   },
   "license": "MIT"

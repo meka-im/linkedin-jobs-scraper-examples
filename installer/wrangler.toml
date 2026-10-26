@@ -1,0 +1,16 @@
+name = "meka-n8n-installer"
+main = "worker/index.mjs"
+compatibility_date = "2025-06-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[observability]
+enabled = false
+
+[[ratelimits]]
+name = "MCP_RATE_LIMITER"
+namespace_id = "2601026"
+simple = { limit = 60, period = 60 }

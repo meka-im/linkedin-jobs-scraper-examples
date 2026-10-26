@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "measurement": "cloud-installer-local-acceptance",
+  "date": "2026-10-26",
+  "measurementTimezone": "Asia/Shanghai",
+  "runtime": {
+    "provider": "n8n Cloud",
+    "version": "2.45.3",
+    "environment": "Experimental",
+    "installerHost": "local-loopback"
+  },
+  "artifact": {
+    "path": "n8n/linkedin-jobs-cloud.json",
+    "sha256": "fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b"
+  },
+  "oauth": {
+    "scopes": [
+      "workflow:read",
+      "workflow:write",
+      "credential:read"
+    ],
+    "credentialSelection": {
+      "apifyCredentialType": "apifyOAuth2Api",
+      "googleCredentialType": "googleSheetsOAuth2Api",
+      "availableCredentialsPerType": 1,
+      "automaticallyPreselected": true
+    }
+  },
+  "installation": {
+    "workflowsCreated": 1,
+    "validationBeforeCreate": true,
+    "nodeCount": 41,
+    "connectionCount": 39,
+    "detailsVerificationPassed": true,
+    "active": false,
+    "timezone": "UTC",
+    "availableInMCP": true
+  },
+  "credentialBinding": {
+    "reviewedInn8nUIExport": true,
+    "apifyOAuth2Bindings": 4,
+    "googleSheetsOAuth2Bindings": 10,
+    "totalBindings": 14,
+    "oneCredentialPerProvider": true,
+    "credentialIdsIncluded": false
+  },
+  "exportComparison": {
+    "graphConsistent": true,
+    "businessCodeConsistent": true,
+    "explicitSettingsConsistent": true,
+    "difference": "n8n omitted known default parameters"
+  },
+  "configuration": {
+    "trigger": "Manual Trigger",
+    "keywords": "software engineer",
+    "location": "London, United Kingdom",
+    "datePosted": "pastWeek",
+    "limit": 10,
+    "budgetCapUsd": 0.05,
+    "scrapeCompany": false
+  },
+  "execution": {
+    "manualRuns": 2,
+    "liveActorRuns": 2,
+    "scheduleActive": false,
+    "published": false
+  },
+  "runs": [
+    {
+      "sequence": 1,
+      "status": "success",
+      "fetchedCount": 10,
+      "newCount": 10,
+      "appendedCount": 10,
+      "skippedExisting": 0,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "stoppedByBudget": false,
+      "uiTotalDurationSeconds": 28.537
+    },
+    {
+      "sequence": 2,
+      "status": "success",
+      "fetchedCount": 10,
+      "newCount": 2,
+      "appendedCount": 2,
+      "skippedExisting": 8,
+      "skippedBatchDuplicates": 0,
+      "coverage": "complete",
+      "failedSearches": 0,
+      "failedJobDetails": 0,
+      "failedCompanies": 0,
+      "cacheHits": 8,
+      "stoppedByBudget": false
+    }
+  ],
+  "spreadsheet": {
+    "automaticCreationOnFirstManualRun": true,
+    "sameSpreadsheetReused": true,
+    "firstRead": {
+      "range": "Jobs!A1:J15",
+      "rowsIncludingHeader": 11
+    },
+    "secondRead": {
+      "range": "Jobs!A1:J20",
+      "rowsIncludingHeader": 13,
+      "uniqueJobIds": 12,
+      "duplicateJobIds": 0,
+      "originalRows": 10,
+      "originalBusinessCellsChecked": 100,
+      "originalBusinessCellsPreserved": 100,
+      "firstSeenAtPreserved": true
+    }
+  },
+  "publication": {
+    "workerDeployed": false,
+    "hostedInstallerUrlPublished": false,
+    "hostedAcceptancePerformed": false,
+    "publicButtonLive": false
+  },
+  "claimBoundaries": {
+    "hostedInstallerPassed": false,
+    "oneClickSetup": false,
+    "clickToRun": false,
+    "privateResourceIdentifiersIncluded": false
+  }
+}

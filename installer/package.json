@@ -1,0 +1,23 @@
+{
+  "name": "@meka/n8n-cloud-installer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser installer for the MEKA LinkedIn Jobs workflow on n8n Cloud",
+  "scripts": {
+    "build": "node build-sdk-template.mjs",
+    "build:public": "node build-public-assets.mjs",
+    "start": "node server.mjs",
+    "test": "node --test ../tests/installer*.test.mjs",
+    "worker:check": "npm run build:public && wrangler deploy --dry-run -c wrangler.toml",
+    "worker:dev": "npm run build:public && wrangler dev -c wrangler.toml",
+    "worker:deploy": "npm run build:public && wrangler deploy -c wrangler.toml"
+  },
+  "devDependencies": {
+    "@n8n/workflow-sdk": "0.37.2",
+    "wrangler": "4.152.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

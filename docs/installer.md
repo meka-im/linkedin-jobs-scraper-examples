@@ -185,6 +185,15 @@ The release sequence is to merge the public-repository change, deploy the
 been removed. Installation acceptance records are point-in-time snapshots and
 do not track later route operations.
 
+`routes = []` controls the Worker's route configuration; it does not by itself
+guarantee that an existing Cloudflare Workers Custom Domain has been removed.
+After each cutover deployment, the release owner must inspect Cloudflare
+Domains or use the official API for the exact service, explicitly remove any
+remaining custom-domain binding, and verify the hostname no longer resolves.
+This operation does not add a replacement public hostname; the MEKA site keeps
+using the `N8N_INSTALLER` service binding. The completed cutover is recorded in
+the [sanitized cutover evidence](../validation/2026-10-26/n8n-hub-cutover-complete.json).
+
 The Worker package still contains the installer's static assets and exposes
 only these internal API routes:
 

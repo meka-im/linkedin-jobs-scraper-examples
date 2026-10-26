@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "measurement": "n8n-hub-cutover-complete",
+  "evidenceType": "final-cutover-state",
+  "date": "2026-10-26",
+  "measurementTimezone": "Asia/Shanghai",
+  "publicEntry": {
+    "repositoryMergeCommit": "790628fcb40611c88c4096c596d07c99373c0f45",
+    "officialRepository": "meka-im/linkedin-jobs-scraper-examples",
+    "pullRequestNumber": 10,
+    "newEntryPublished": true,
+    "directoryUrl": "https://meka.im/n8n",
+    "installerUrl": "https://meka.im/n8n/linkedin-jobs-to-google-sheets",
+    "readmeImageButtonClickedInChrome": true,
+    "destinationMatchedInstallerUrl": true,
+    "workspaceFieldInitiallyEmpty": true,
+    "previousAuthorizationRetained": false
+  },
+  "backendDeployment": {
+    "service": "meka-n8n-installer",
+    "sourceRevision": "790628fcb40611c88c4096c596d07c99373c0f45",
+    "sourceTree": "clean-merged-main",
+    "cloudflareVersion": "d68f61d9-c9c0-4c70-b585-eac3b168ae32",
+    "routes": [],
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false,
+    "siteServiceBinding": "N8N_INSTALLER",
+    "wranglerDeployReportedNoTargets": true
+  },
+  "customDomainCutover": {
+    "hostname": "install.meka.im",
+    "routesOnlyDidNotRemoveCustomDomain": true,
+    "serviceOwnershipVerifiedBeforeRemoval": true,
+    "removedThroughOfficialCloudflareApi": true,
+    "postRemovalDomainBindingMatchCount": 0,
+    "replacementPublicHostnameAdded": false,
+    "formerCustomDomainRemoved": true
+  },
+  "dnsVerification": {
+    "provider": "Cloudflare DNS over HTTPS",
+    "recordType": "A",
+    "hostname": "install.meka.im",
+    "status": 3,
+    "statusName": "NXDOMAIN",
+    "answerCount": 0
+  },
+  "backendAndPreviewEndpointSettings": {
+    "backendWorkersDevEnabled": false,
+    "backendPreviewUrlsEnabled": false,
+    "temporaryPreviewWorkerDeletedViaCli": true,
+    "temporaryPreviewSettingsStatusAfterDelete": 404
+  },
+  "serviceHealthAfterRemoval": {
+    "url": "https://meka.im/api/n8n/health",
+    "status": 200,
+    "body": {
+      "relay": true,
+      "publicRelay": true,
+      "loopbackOnly": false
+    }
+  },
+  "unchangedProductionState": {
+    "siteVersion": "cda4eed5-1ca7-432c-b950-92079eefbad5",
+    "siteRedeployedDuringCutover": false,
+    "dataWorkerRedeployed": false,
+    "actorRedeployed": false,
+    "customerKeysChanged": false,
+    "paidActorRunsPerformed": 0,
+    "googleSheetWritesPerformed": 0,
+    "scheduleActivated": false
+  },
+  "relatedEvidence": {
+    "installationSnapshot": {
+      "path": "validation/2026-10-26/n8n-hub-production-acceptance.json",
+      "scope": "installation-time-only",
+      "cutoverFieldsRemainHistorical": true
+    },
+    "previousHostedAcceptance": {
+      "path": "validation/2026-10-26/cloud-installer-hosted-acceptance.json",
+      "scope": "previous-independent-hostname"
+    }
+  },
+  "privacy": {
+    "privateRepositoryUrlIncluded": false,
+    "personalAccountOrOwnerIncluded": false,
+    "temporaryPreviewNameOrHostIncluded": false,
+    "cloudflareAccountIdentifierIncluded": false,
+    "cloudflareZoneIdentifierIncluded": false,
+    "dnsRecordIdentifierIncluded": false,
+    "privateWorkspaceOrWorkflowIdentifierIncluded": false,
+    "privateCredentialOrSheetIdentifierIncluded": false,
+    "credentialOrApiTokenIncluded": false
+  },
+  "claimBoundaries": {
+    "priorInstallationSnapshotStillShowsCutoverPending": true,
+    "cutoverComplete": true,
+    "formerCustomDomainRemoved": true,
+    "serviceBindingHealthVerified": true,
+    "newPaidActorRunPerformed": false,
+    "googleSheetAccessed": false,
+    "schedulePublished": false
+  }
+}

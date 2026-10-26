@@ -6,11 +6,15 @@ n8n Cloud 2.45.3 Experimental, including automatic spreadsheet bootstrap,
 incremental deduplication, the Actor spending cap, and the ten-column `Jobs`
 table.
 
-The hosted entry is **[install.meka.im](https://install.meka.im/)**. Its
-deployment and installation-only acceptance are recorded separately from the
-two live manual Actor runs. The release owner independently confirmed the
-hosted workflow's 14 explicit credential bindings in the n8n UI export without
-recording credential IDs in public evidence.
+The live entry is the
+**[MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets)**.
+Its [production acceptance](../validation/2026-10-26/n8n-hub-production-acceptance.json)
+records OAuth in a controlled preview and on the production domain, one
+inactive workflow creation in each environment, independent UI export review,
+and the public relay boundary. It did not run the Actor, read or write a
+Google Sheet, or publish the schedule. The earlier
+[hosted acceptance](../validation/2026-10-26/cloud-installer-hosted-acceptance.json)
+covers the previous independent hostname and remains historical.
 
 ## Start here
 
@@ -19,11 +23,13 @@ recording credential IDs in public evidence.
 2. In the Apify credential, allow HTTP Request domain `api.apify.com`. In the
    Google credential, allow
    `www.googleapis.com,sheets.googleapis.com`. Keep **All** unselected.
-3. Open [install.meka.im](https://install.meka.im/), enter the workspace,
+3. Open the [MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets),
+   enter the workspace,
    authorize `workflow:read`, `workflow:write`, and `credential:read`, then
    choose one credential of each type and your search settings.
-4. Click **Install** once and wait for **Installation Verified**. Choose
-   **Open in n8n** after the workflow readback passes.
+4. Click **Install inactive workflow** once and wait for **VERIFIED** and
+   **Your workflow is ready to review**. Choose **Open in n8n** after the
+   workflow readback passes.
 
 The resulting workflow is inactive. Installation does not run the paid Actor,
 create a spreadsheet, publish, or activate the schedule.
@@ -54,7 +60,8 @@ It then:
 7. Calls `create_workflow_from_code` once.
 8. Reads the created workflow and verifies 41 nodes, 39 connections, core
    parameters, UTC settings, `active=false`, and `availableInMCP=true`.
-9. Shows **Open in n8n** only after that verification passes.
+9. Shows **VERIFIED** and **Your workflow is ready to review**, with
+   **Open in n8n**, only after that verification passes.
 
 The installer does not call `execute_workflow`, `publish_workflow`,
 `archive_workflow`, or any delete operation. It does not run the paid Actor.
@@ -77,6 +84,10 @@ If the n8n workspace configures a non-empty OAuth callback allowlist, the
 installer callback must exactly match one of its allowed URIs. A workspace with
 an empty allowlist does not impose that extra match. A hosted installer still
 needs a redirect URI that the workspace administrator is willing to authorize.
+
+The production callback is
+`https://meka.im/n8n/oauth/callback`. The callback removes the OAuth `code` and
+`state` from the visible URL after returning to the installer.
 
 For local development, the callback is a loopback URL such as
 `http://127.0.0.1:4173/`. Loopback redirect URIs use the normal browser OAuth
@@ -163,19 +174,27 @@ security, or claim success when MCP is unavailable.
 
 The Worker source is under `installer/worker/`, with
 `installer/wrangler.toml` naming the independent service
-`meka-n8n-installer`. It is deployed at
-[install.meka.im](https://install.meka.im/). The custom domain is the only
-public route: `workers_dev` and preview URLs are disabled.
+`meka-n8n-installer`. The public installer runs on the
+[MEKA n8n hub](https://meka.im/n8n/linkedin-jobs-to-google-sheets). The
+production website reaches the backend through its `N8N_INSTALLER` service
+binding: `/api/n8n/health` maps to `/api/health`, and `/api/n8n/mcp` maps to
+`/api/mcp`. The repository's cutover configuration removes the Worker's public
+route: `routes = []`, `workers_dev = false`, and preview URLs are disabled.
+The release sequence is to merge the public-repository change, deploy the
+`routes = []` configuration, and then verify that the former custom domain has
+been removed. Installation acceptance records are point-in-time snapshots and
+do not track later route operations.
 
-The Worker serves the installer's static assets and exposes only two API
-routes:
+The Worker package still contains the installer's static assets and exposes
+only these internal API routes:
 
 - `GET /api/health`
 - `POST /api/mcp`, plus same-origin `OPTIONS`
 
 The page still sends OAuth discovery, registration, authorization, and token
 requests directly to the selected n8n Cloud origin. Only MCP JSON-RPC requests
-use `/api/mcp`. The Worker accepts a canonical
+use the public `/api/n8n/mcp` route, which the website maps to the Worker's
+`/api/mcp` route. The Worker accepts a canonical
 `https://<workspace>.app.n8n.cloud` origin in `X-MEKA-Target-Origin`, constructs
 the fixed `/mcp-server/http` URL itself, and never accepts a caller-supplied
 URL or path. The access token remains in browser memory and is forwarded only
@@ -212,7 +231,7 @@ disabled. The Worker application does not log request URLs, OAuth callback
 parameters, tokens, request bodies, credentials, or upstream responses.
 
 The relay is same-origin with the installer, so the browser uses it
-automatically when `/api/health` reports a public relay. A same-origin page
+automatically when the public health route reports a relay. A same-origin page
 cannot isolate its JavaScript from the token it uses for any MCP request; the
 deployment boundary is therefore the reviewed static bundle, restrictive CSP,
 no third-party scripts or analytics, and the fixed relay policy.
@@ -231,10 +250,12 @@ browser JavaScript, generated browser modules, and the unchanged four-square
 MEKA banner. It excludes the Node server, Worker source, tests, docs,
 `node_modules`, package locks, and Wrangler configuration.
 
-The production deployment uses the independent service and custom domain
-described above. Future deployments and hostname changes remain release-owner
-actions after review. The deployed bundle has no analytics, third-party
-scripts, persistent browser token storage, or secret environment variables.
+The active public site uses the private service binding described above. After
+merging the public-repository change, the release owner deploys this
+`routes = []` configuration and verifies that the former custom domain is
+removed. Future deployments and route changes remain release-owner actions
+after review. The deployed bundle has no analytics, third-party scripts,
+persistent browser token storage, or secret environment variables.
 
 ### Loopback development path
 
@@ -265,9 +286,10 @@ The relay:
 - Keeps the OAuth token in browser memory and sends it to the local relay only
   in the authorization header for the duration of an installation.
 
-The hosted Worker remains available at
-[install.meka.im](https://install.meka.im/) for normal use. The loopback server
-is a separate development path and does not receive the production hostname.
+The live hosted installer is the
+[MEKA n8n hub](https://meka.im/n8n/linkedin-jobs-to-google-sheets). The loopback
+server is a separate development path and does not receive the production
+hostname.
 
 ## Workflow behavior
 
@@ -348,15 +370,23 @@ Worker was not yet hosted, so its historical publication fields remain false.
 It includes the two capped Manual Trigger runs with their independently read
 spreadsheet results.
 
-## Hosted installer acceptance
+## Installer acceptance records
 
-The hosted installation-only record is
-[`validation/2026-10-26/cloud-installer-hosted-acceptance.json`](../validation/2026-10-26/cloud-installer-hosted-acceptance.json).
-It records the custom-domain deployment, public endpoint and security-header
-smoke checks, negative relay tests, the three OAuth scopes, successful creation
-of one inactive 41-node/39-connection UTC workflow, independently verified
-exports with four Apify and ten Google credential bindings, and zero paid Actor
-runs.
+The production installation snapshot is
+[`validation/2026-10-26/n8n-hub-production-acceptance.json`](../validation/2026-10-26/n8n-hub-production-acceptance.json).
+It records the live MEKA n8n hub entry, controlled-preview and production
+OAuth, successful inactive-workflow creation and readback, independent UI
+export comparison, relay checks, and zero Actor or Google Sheet activity during
+this installation acceptance. Its `cutoverState` reflects the deployment route
+state when measured; it is a dated snapshot, not a live status indicator.
+
+The earlier
+[`validation/2026-10-26/cloud-installer-hosted-acceptance.json`](../validation/2026-10-26/cloud-installer-hosted-acceptance.json)
+is the historical acceptance for the previous independent hostname. It records
+that deployment, public endpoint and security-header smoke checks, negative
+relay tests, the three OAuth scopes, successful creation of one inactive
+41-node/39-connection UTC workflow, independently verified exports with four
+Apify and ten Google credential bindings, and zero paid Actor runs.
 
 The two live manual Actor runs linked from that evidence were performed on the local
 installer path, not through the hosted service. Public evidence records no

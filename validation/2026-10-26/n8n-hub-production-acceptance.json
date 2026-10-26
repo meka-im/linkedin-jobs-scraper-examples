@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "measurement": "n8n-hub-production-acceptance",
+  "date": "2026-10-26",
+  "measurementTimezone": "Asia/Shanghai",
+  "productionEntry": {
+    "directoryUrl": "https://meka.im/n8n",
+    "installerUrl": "https://meka.im/n8n/linkedin-jobs-to-google-sheets",
+    "oauthCallbackUrl": "https://meka.im/n8n/oauth/callback",
+    "directoryStatus": 200,
+    "installerStatus": 200,
+    "siteMergeRevision": "744b5d2dceed16b0c0507313c72a69726468bec6",
+    "siteImplementationRevision": "2d9a674f58afc3c46e6de069fdd166f153fffa3b",
+    "cloudflareProductionVersion": "cda4eed5-1ca7-432c-b950-92079eefbad5"
+  },
+  "artifact": {
+    "path": "n8n/linkedin-jobs-cloud.json",
+    "sha256": "fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b"
+  },
+  "siteSmoke": {
+    "desktopVerified": true,
+    "mobileWidthPx": 390,
+    "mobileVerified": true,
+    "mobileMenuVerified": true,
+    "primaryNavigationAndFooterN8nEntryConsistent": true,
+    "homepageLinksToN8nDirectory": true,
+    "sitemapIncludesDirectoryAndInstaller": true,
+    "unknownN8nSlugStatus": 404,
+    "existingToolsAndApiPagesStatus": 200,
+    "callbackNoIndex": true,
+    "n8nPagesCacheControlNoStore": true,
+    "n8nPagesReferrerPolicyNoReferrer": true,
+    "n8nPagesNonceContentSecurityPolicy": true
+  },
+  "oauth": {
+    "controlledPreviewCompleted": true,
+    "productionDomainCompleted": true,
+    "temporaryPreviewHostIncluded": false,
+    "scopes": [
+      "workflow:read",
+      "workflow:write",
+      "credential:read"
+    ],
+    "callbackQueryCleared": {
+      "code": true,
+      "state": true
+    },
+    "credentialsAutomaticallyDiscovered": {
+      "controlledPreview": {
+        "apifyOAuth2Api": true,
+        "googleSheetsOAuth2Api": true
+      },
+      "production": {
+        "apifyOAuth2Api": true,
+        "googleSheetsOAuth2Api": true
+      }
+    }
+  },
+  "installation": {
+    "environmentsTested": 2,
+    "inactiveWorkflowsCreatedPerEnvironment": 1,
+    "totalInactiveWorkflowsCreated": 2,
+    "validateWorkflowPassed": true,
+    "mcpReadbackVerifiedInBothEnvironments": true,
+    "workflowDetailsReadbackVerified": true,
+    "independentOfficialUiExportReviewCompleted": true,
+    "nodeCount": 41,
+    "connectionEntryCount": 39,
+    "credentialBindings": {
+      "apifyOAuth2Api": 4,
+      "googleSheetsOAuth2Api": 10,
+      "googleHttpNodes": 8,
+      "googleNativeSheetsNodes": 2,
+      "total": 14
+    },
+    "timezone": "UTC",
+    "active": false,
+    "availableInMCP": true,
+    "pinDataEmpty": true
+  },
+  "exportComparison": {
+    "productionAndControlledPreviewMatch": true,
+    "productionAndPreviousHostedCopyMatch": true,
+    "controlledPreviewAndPreviousHostedCopyMatch": true,
+    "nodeFieldsCompared": [
+      "id",
+      "type",
+      "typeVersion",
+      "parameters",
+      "disabled",
+      "retryOnFail",
+      "onError",
+      "executeOnce",
+      "alwaysOutputData",
+      "credentials"
+    ],
+    "coreFieldsIdentical": true,
+    "credentialBindingsIdentical": true
+  },
+  "executionBoundary": {
+    "uiLogsStatus": "nothing-to-display-yet",
+    "manualRunsThisAcceptance": 0,
+    "actorRunsThisAcceptance": 0,
+    "googleSheetReadsThisAcceptance": 0,
+    "googleSheetWritesThisAcceptance": 0,
+    "googleSheetsCreatedThisAcceptance": 0,
+    "schedulePublishedThisAcceptance": false
+  },
+  "connectionLifecycle": {
+    "leavingInstallerRequiresWorkspaceReconnect": true,
+    "reconnectRetainsOldConnection": false,
+    "duplicateCreateOnReconnect": false
+  },
+  "relay": {
+    "backendService": "meka-n8n-installer",
+    "serviceBinding": "N8N_INSTALLER",
+    "publicHealthPath": "/api/n8n/health",
+    "backendHealthPath": "/api/health",
+    "publicMcpPath": "/api/n8n/mcp",
+    "backendMcpPath": "/api/mcp",
+    "productionSameOriginHealthStatus": 200,
+    "foreignOriginStatus": 403,
+    "executeWorkflowStatus": 400,
+    "negativeRequestsBlockedBeforeN8nUpstream": true,
+    "invalidTestTokenUsed": true,
+    "allowedTools": [
+      "list_credentials",
+      "validate_workflow",
+      "create_workflow_from_code",
+      "get_workflow_details",
+      "search_workflows"
+    ],
+    "requestLimitBytes": 320000,
+    "responseLimitBytes": 5000000,
+    "upstreamTimeoutMs": 45000,
+    "rateLimit": {
+      "requests": 60,
+      "periodSeconds": 60,
+      "scope": "client-ip",
+      "namespaceId": "2601026"
+    },
+    "applicationLoggingEnabled": false,
+    "n8nTokenPersisted": false,
+    "apifyOrGoogleSecretsRead": false,
+    "newProviderKeysCreated": false
+  },
+  "repositoryVerification": {
+    "siteTestsPassed": 256,
+    "siteTypecheckPassed": true,
+    "siteProductionBuildPassed": true,
+    "sitePreviewBuildPassed": true,
+    "repositoryPrecommitChecksPassed": 3,
+    "publicRepositoryNodeTestsPassed": 124,
+    "publicRepositoryPythonTestsPassed": 4,
+    "internalWorkerDryRunPassed": true
+  },
+  "cutoverState": {
+    "repositoryConfiguredPublicRoutes": [],
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false,
+    "formerCustomDomainRetired": false,
+    "formerCustomDomainRetirement": "planned-after-public-repository-release-and-verification"
+  },
+  "historicalEvidence": {
+    "installerAcceptance": {
+      "path": "validation/2026-10-26/cloud-installer-hosted-acceptance.json",
+      "scope": "previous-independent-hostname"
+    },
+    "liveActorAndManualRuns": {
+      "path": "validation/2026-10-26/cloud-installer-local-acceptance.json",
+      "scope": "historical-local-installation-and-two-manual-runs"
+    }
+  },
+  "privacy": {
+    "privateRepositoryUrlIncluded": false,
+    "personalAccountOrOwnerIncluded": false,
+    "temporaryHostIncluded": false,
+    "cloudflareAccountIdentifierIncluded": false,
+    "privateWorkspaceOrWorkflowIdentifierIncluded": false,
+    "privateCredentialOrSheetIdentifierIncluded": false,
+    "credentialSecretIncluded": false
+  },
+  "claimBoundaries": {
+    "productionEntryLive": true,
+    "productionOAuthCompleted": true,
+    "inactiveWorkflowReadbackVerified": true,
+    "officialUiExportReviewed": true,
+    "paidActorRunPerformedThisAcceptance": false,
+    "googleSheetAccessedThisAcceptance": false,
+    "schedulePublishedThisAcceptance": false,
+    "formerCustomDomainRetired": false,
+    "pricingOrLatencyClaimed": false
+  }
+}

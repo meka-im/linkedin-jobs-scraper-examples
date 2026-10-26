@@ -4,16 +4,16 @@
 
 ## Recommended: hosted installer
 
-For n8n Cloud, open **[install.meka.im](https://install.meka.im/)**. After a workspace administrator enables **Settings → MCP** and the user connects their Apify OAuth and Google Sheets OAuth credentials, the installer can create one inactive workflow with all 14 explicit credential references without a JSON download or a node-by-node import pass.
+For n8n Cloud, open the **[MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets)**. After a workspace administrator enables **Settings → MCP** and the user connects their Apify OAuth and Google Sheets OAuth credentials, the installer can create one inactive workflow with all 14 explicit credential references without a JSON download or a node-by-node import pass.
 
 Set the credentials' **Allowed HTTP Request Domains** to **Specific Domains**:
 
 - Apify: `api.apify.com`
 - Google: `www.googleapis.com,sheets.googleapis.com`
 
-The n8n OAuth token is used with `workflow:read`, `workflow:write`, and `credential:read`. During installation its MCP requests pass transiently through the MEKA relay at `install.meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
+The n8n OAuth token is used with `workflow:read`, `workflow:write`, and `credential:read`. During installation its MCP requests pass transiently through the MEKA n8n hub relay at `meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
 
-The hosted installer creates the workflow inactive and does not run the Actor or activate the schedule. The first Manual Trigger creates or reuses the tagged spreadsheet and exact `Jobs` header. See the [installer guide](installer.md) and [hosted acceptance evidence](../validation/2026-10-26/cloud-installer-hosted-acceptance.json).
+The hosted installer creates the workflow inactive and does not run the Actor or activate the schedule. The first Manual Trigger creates or reuses the tagged spreadsheet and exact `Jobs` header. See the [installer guide](installer.md) and the [production n8n hub acceptance](../validation/2026-10-26/n8n-hub-production-acceptance.json). The separate [historical hosted acceptance](../validation/2026-10-26/cloud-installer-hosted-acceptance.json) applies to the previous independent hostname.
 
 The exact imported artifact, SHA-256 `fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b`, was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. Two Manual Trigger runs completed against one workflow-created spreadsheet, and the schedule remained inactive. The [sanitized acceptance evidence](../validation/2026-10-25/cloud-auto-setup-acceptance.json) contains the run counts and verification boundaries without workspace, account, spreadsheet, run, or execution IDs.
 

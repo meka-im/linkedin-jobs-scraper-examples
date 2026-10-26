@@ -2,17 +2,30 @@
 
 [`linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json) is an opt-in convenience variant of the main workflow. It uses OAuth credentials and creates or recovers its own Google spreadsheet, so you do not copy a spreadsheet ID or prepare the `Jobs` worksheet by hand.
 
+## Recommended: hosted installer
+
+For n8n Cloud, open **[install.meka.im](https://install.meka.im/)**. After a workspace administrator enables **Settings → MCP** and the user connects their Apify OAuth and Google Sheets OAuth credentials, the installer can create one inactive workflow with all 14 explicit credential references without a JSON download or a node-by-node import pass.
+
+Set the credentials' **Allowed HTTP Request Domains** to **Specific Domains**:
+
+- Apify: `api.apify.com`
+- Google: `www.googleapis.com,sheets.googleapis.com`
+
+The n8n OAuth token is used with `workflow:read`, `workflow:write`, and `credential:read`. During installation its MCP requests pass transiently through the MEKA relay at `install.meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
+
+The hosted installer creates the workflow inactive and does not run the Actor or activate the schedule. The first Manual Trigger creates or reuses the tagged spreadsheet and exact `Jobs` header. See the [installer guide](installer.md) and [hosted acceptance evidence](../validation/2026-10-26/cloud-installer-hosted-acceptance.json).
+
 The exact imported artifact, SHA-256 `fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b`, was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. Two Manual Trigger runs completed against one workflow-created spreadsheet, and the schedule remained inactive. The [sanitized acceptance evidence](../validation/2026-10-25/cloud-auto-setup-acceptance.json) contains the run counts and verification boundaries without workspace, account, spreadsheet, run, or execution IDs.
 
-The variant has no public n8n template ID or URL. Those exist only after n8n approves a submission.
+The separate n8n Creator template submission is still pending. It is not required for the hosted installer and this guide does not describe it as an approved public template.
 
-## Quick path
+## Manual JSON fallback
 
 1. Import [`linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json) as a new inactive workflow and save it.
 2. Create or choose the managed **Apify OAuth2** and **Google Sheets OAuth2** credentials. Set the exact HTTP domains described below, then open all 14 credential-bearing nodes, confirm the matching credential, and save.
 3. Set `keywords` and `location`, review the advanced search settings and spending cap, save, and run the **Manual Trigger**. The workflow creates or reuses the tagged spreadsheet and exact `Jobs` header before starting the Actor.
 
-The JSON import does not bind credentials, and Cloud may report `Credentials not found` until the 14-node confirmation pass is saved. There is no public template button and no promise of one-click or two-click setup. Account connection, node confirmation, and search selection remain user steps.
+The JSON import does not bind credentials, and Cloud may report `Credentials not found` until the 14-node confirmation pass is saved. This limitation applies to the manual fallback; the hosted installer validates and submits the explicit bindings as part of its installation flow.
 
 ## Accepted Cloud snapshot
 

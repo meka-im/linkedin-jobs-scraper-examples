@@ -6,9 +6,27 @@ n8n Cloud 2.45.3 Experimental, including automatic spreadsheet bootstrap,
 incremental deduplication, the Actor spending cap, and the ten-column `Jobs`
 table.
 
-This installer is under acceptance testing. There is no published GitHub Pages
-or production relay URL yet, and this document does not claim that the hosted
-path is live.
+The hosted entry is **[install.meka.im](https://install.meka.im/)**. Its
+deployment and installation-only acceptance are recorded separately from the
+two live manual Actor runs. The release owner independently confirmed the
+hosted workflow's 14 explicit credential bindings in the n8n UI export without
+recording credential IDs in public evidence.
+
+## Start here
+
+1. In your n8n Cloud workspace, enable **Settings → MCP** and connect your own
+   Apify OAuth and Google Sheets OAuth credentials.
+2. In the Apify credential, allow HTTP Request domain `api.apify.com`. In the
+   Google credential, allow
+   `www.googleapis.com,sheets.googleapis.com`. Keep **All** unselected.
+3. Open [install.meka.im](https://install.meka.im/), enter the workspace,
+   authorize `workflow:read`, `workflow:write`, and `credential:read`, then
+   choose one credential of each type and your search settings.
+4. Click **Install** once and wait for **Installation Verified**. Choose
+   **Open in n8n** after the workflow readback passes.
+
+The resulting workflow is inactive. Installation does not run the paid Actor,
+create a spreadsheet, publish, or activate the schedule.
 
 ## What it does
 
@@ -118,6 +136,11 @@ same-origin MEKA installer relay described below. The browser and relay do not
 place it in a URL, DOM text, local storage, or long-term session storage, and
 the installer application does not log it.
 
+The relay handles MCP calls during installation only and does not persist the
+n8n access token. Apify and Google OAuth secrets remain in the user's n8n
+credentials; the installer reads only credential metadata and does not export
+or change those secrets.
+
 The OAuth state is random and single use with a ten-minute lifetime. The PKCE
 verifier, state, workspace origin, registration metadata, and redirect URI are
 temporarily held in `sessionStorage` only long enough to survive the redirect.
@@ -132,15 +155,17 @@ preflights. In the inspected Cloud build, the MCP endpoint responds to
 direct browser-to-n8n exchange, while MCP needs a same-origin relay.
 
 A static GitHub Pages deployment can finish OAuth and then fail clearly at the
-first MCP request. It is not a viable public one-click path for this flow. The
+first MCP request. It is not a viable public hosted path for this flow. The
 installer does not use `no-cors`, put a token in a URL, disable browser
 security, or claim success when MCP is unavailable.
 
-### Cloudflare Worker public-entry package
+### Hosted Cloudflare Worker
 
-The reviewed deployment candidate is under `installer/worker/`, with
-`installer/wrangler.toml` naming the Worker `meka-n8n-installer`. It is packaged
-but has not been deployed. No public installer or relay URL is claimed yet.
+The Worker source is under `installer/worker/`, with
+`installer/wrangler.toml` naming the independent service
+`meka-n8n-installer`. It is deployed at
+[install.meka.im](https://install.meka.im/). The custom domain is the only
+public route: `workers_dev` and preview URLs are disabled.
 
 The Worker serves the installer's static assets and exposes only two API
 routes:
@@ -206,10 +231,10 @@ browser JavaScript, generated browser modules, and the unchanged four-square
 MEKA banner. It excludes the Node server, Worker source, tests, docs,
 `node_modules`, package locks, and Wrangler configuration.
 
-Deployment and linking a public hostname remain release-owner actions after
-independent review and live OAuth/MCP acceptance. The candidate has no
-analytics, third-party scripts, persistent browser token storage, or secret
-environment variables.
+The production deployment uses the independent service and custom domain
+described above. Future deployments and hostname changes remain release-owner
+actions after review. The deployed bundle has no analytics, third-party
+scripts, persistent browser token storage, or secret environment variables.
 
 ### Loopback development path
 
@@ -240,9 +265,9 @@ The relay:
 - Keeps the OAuth token in browser memory and sends it to the local relay only
   in the authorization header for the duration of an installation.
 
-The separately packaged Worker is the reviewed public-entry candidate. It still
-requires deployment, abuse and residency review appropriate to the selected
-account, and live acceptance before it can be called operational.
+The hosted Worker remains available at
+[install.meka.im](https://install.meka.im/) for normal use. The loopback server
+is a separate development path and does not receive the production hostname.
 
 ## Workflow behavior
 
@@ -318,9 +343,24 @@ inactive UTC workflow, the UI export's four Apify and ten Google credential
 bindings, and two capped Manual Trigger runs with independent Sheet readback.
 
 The record deliberately excludes workspace, account, workflow, execution, run,
-dataset, credential, and spreadsheet identifiers. It is evidence for the local
-installer path only. The Worker has not been deployed, no hosted installer URL
-is published, and this record is not hosted acceptance.
+dataset, credential, and spreadsheet identifiers. It was recorded while the
+Worker was not yet hosted, so its historical publication fields remain false.
+It includes the two capped Manual Trigger runs with their independently read
+spreadsheet results.
+
+## Hosted installer acceptance
+
+The hosted installation-only record is
+[`validation/2026-10-26/cloud-installer-hosted-acceptance.json`](../validation/2026-10-26/cloud-installer-hosted-acceptance.json).
+It records the custom-domain deployment, public endpoint and security-header
+smoke checks, negative relay tests, the three OAuth scopes, successful creation
+of one inactive 41-node/39-connection UTC workflow, independently verified
+exports with four Apify and ten Google credential bindings, and zero paid Actor
+runs.
+
+The two live manual Actor runs linked from that evidence were performed on the local
+installer path, not through the hosted service. Public evidence records no
+workspace, account, workflow, run, dataset, credential, or spreadsheet IDs.
 
 ## Offline verification
 
@@ -344,7 +384,8 @@ and `204` notification responses.
 The loopback server tests skip only when the test sandbox forbids `listen`.
 Run them outside that sandbox for final acceptance.
 
-The final live acceptance must be performed by the release owner with an
-authorized n8n Cloud workspace and the intended public Worker hostname. Do not
-treat offline tests as proof that OAuth, the allowed redirect URI, Worker CORS,
-credential reachability, or workflow creation works in a live account.
+The hosted installation path has been exercised separately; see the evidence
+section above. Offline tests remain distinct from that live result. A future
+deployment should still be checked for OAuth redirect behavior, Worker CORS and
+relay limits, credential reachability, workflow readback, and failure messages
+before release.

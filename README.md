@@ -9,36 +9,19 @@
 </p>
 
 <p align="center">
-  <a href="docs/cloud-setup.md">
-    <img src="https://img.shields.io/badge/Cloud_auto--setup-0a7f5a?style=for-the-badge&logo=n8n&logoColor=white" alt="Open the n8n Cloud auto-setup guide">
-  </a>
-  <a href="#header-auth-fallback">
-    <img src="https://img.shields.io/badge/Header_Auth_fallback-ea4b71?style=for-the-badge&logo=n8n&logoColor=white" alt="Use the original Header Auth workflow">
-  </a>
-  <a href="https://raw.githubusercontent.com/meka-im/linkedin-jobs-scraper-examples/main/n8n/linkedin-jobs-to-google-sheets.json">
-    <img src="https://img.shields.io/badge/Get_Header_Auth_JSON-075cf5?style=for-the-badge&logo=n8n&logoColor=white" alt="Get the original Header Auth workflow JSON">
-  </a>
-  <a href="https://apify.com/meka.im/linkedin-jobs-scraper">
-    <img src="https://img.shields.io/badge/Run_on_Apify-061b37?style=for-the-badge" alt="Run on Apify">
-  </a>
-  <a href="https://meka.im/tools/linkedin-jobs">
-    <img src="https://img.shields.io/badge/Product_page-meka.im-111827?style=for-the-badge" alt="Visit the LinkedIn Jobs product page">
-  </a>
+  <a href="https://install.meka.im/"><img src="assets/install-n8n-cloud.svg" width="460" alt="Install to n8n Cloud"></a>
 </p>
 
 <p align="center">
-  <a href="docs/cloud-setup.md">Cloud auto-setup</a> &middot;
-  <a href="#header-auth-fallback">Header Auth fallback</a> &middot;
-  <a href="#one-command-start">One-command start</a> &middot;
+  <strong>Enable MCP, connect your accounts, choose a search, then install one inactive workflow and open it in n8n.</strong>
+</p>
+
+<p align="center">
+  <a href="docs/installer.md">Installer guide</a> &middot;
   <a href="#how-it-works">How it works</a> &middot;
-  <a href="#api-examples">API examples</a> &middot;
+  <a href="#header-auth-fallback">Header Auth fallback</a> &middot;
+  <a href="#one-command-start">CLI</a> &middot;
   <a href="#documentation">Documentation</a>
-</p>
-
-<p align="center">
-  <strong>Cloud auto-setup: import &rarr; connect your accounts &rarr; save matching jobs.</strong>
-  <a href="docs/cloud-setup.md">Start the Cloud guide</a><br>
-  <sub>Managed OAuth creates and reuses a tagged Google spreadsheet with the exact header, so you do not copy a token, spreadsheet ID, or headers.</sub>
 </p>
 
 ## Why this workflow
@@ -48,15 +31,25 @@
 - **Stable first-seen data.** Existing rows are not rewritten, so `firstSeenAt` remains the timestamp when that job first entered your sheet.
 - **Small dependency surface.** The original Header Auth workflow and CLI use built-in nodes or runtime-standard features. The Cloud auto-setup variant additionally requires the official `@apify/n8n-nodes-apify` community package so HTTP Request nodes can use its Apify OAuth credential.
 
-## Cloud auto-setup
+## Install to n8n Cloud
 
-The convenience variant was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. It is still a manual JSON import until n8n approves a public template. See the [sanitized acceptance evidence](validation/2026-10-25/cloud-auto-setup-acceptance.json).
+Use the hosted installer at **[install.meka.im](https://install.meka.im/)**. It uses n8n's official MCP server with only `workflow:read`, `workflow:write`, and `credential:read`, creates exactly one inactive workflow, and shows **Open in n8n** only after reading back and verifying the 41-node graph, 39 connections, UTC setting, and inactive state.
+
+1. **Enable MCP and connect accounts.** In n8n, enable **Settings → MCP**, then connect your own managed Apify OAuth and Google Sheets OAuth credentials. Set their **Allowed HTTP Request Domains** to `api.apify.com` and `www.googleapis.com,sheets.googleapis.com` respectively.
+2. **Choose the connections and search.** Enter your workspace in the installer, authorize the three installer scopes, select one credential of each type, and set keywords, location, and any advanced limits.
+3. **Install and open.** Click **Install** once. After **Installation Verified**, choose **Open in n8n**.
+
+The installer does not run a paid Actor, create a spreadsheet, publish, or activate the schedule. The first Manual Trigger in the new inactive workflow creates or reuses the tagged spreadsheet and exact ten-column `Jobs` header; paid execution remains your explicit action. Live installation acceptance is recorded in the [sanitized hosted evidence](validation/2026-10-26/cloud-installer-hosted-acceptance.json).
+
+### Manual JSON fallback
+
+If you cannot use the hosted installer, the cloud workflow remains available as a manual import. It was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package; see the [sanitized OAuth and two-run evidence](validation/2026-10-25/cloud-auto-setup-acceptance.json).
 
 1. **Import.** Add [`n8n/linkedin-jobs-cloud.json`](n8n/linkedin-jobs-cloud.json) as a new, inactive workflow. Do not prepare a sheet or header.
-2. **Connect and confirm.** Create or choose one managed Apify OAuth credential and one Google Sheets OAuth credential. The JSON carries no credential IDs, so open every credential-bearing node, confirm the matching credential, and save. The [Cloud guide](docs/cloud-setup.md) lists the nodes and exact domain restrictions.
+2. **Connect and confirm.** Create or choose one managed Apify OAuth credential and one Google Sheets OAuth credential. The JSON carries no credential IDs, so open all 14 credential-bearing nodes, confirm the matching credential, and save. The [Cloud setup guide](docs/cloud-setup.md#manual-json-fallback) lists the nodes and exact domain restrictions.
 3. **Search and test.** Set `keywords` and `location`, review the advanced date window, result limit, and spending cap, then run the **Manual Trigger**. A successful bootstrap creates or reuses one tagged spreadsheet and its exact ten-column `Jobs` worksheet, then the original deduplication and append flow takes over.
 
-The source JSON declares `UTC`, but n8n Cloud 2.45.3 Experimental did not preserve `settings.timezone` on import. The two manual acceptance runs used the instance default. Before enabling the schedule, explicitly choose `Etc/UTC` or your local timezone, verify what **08:00** means, and save.
+The source JSON declares `UTC`, but n8n Cloud 2.45.3 Experimental did not preserve `settings.timezone` on import. Those manual acceptance runs used the instance default. Before enabling the schedule, explicitly choose `Etc/UTC` or your local timezone, verify what **08:00** means, and save.
 
 ## How it works
 
@@ -74,8 +67,8 @@ The original [Header Auth workflow](n8n/linkedin-jobs-to-google-sheets.json)
 remains available for self-hosted n8n, environments where Apify OAuth is
 unavailable, and users who prefer a dedicated token with narrower permissions.
 Its executable graph and local/import fingerprint are unchanged. For the
-convenience path with OAuth and an automatically created sheet, use
-[Cloud auto-setup](docs/cloud-setup.md).
+managed path with OAuth and an automatically created sheet, use the
+[hosted n8n Cloud installer](https://install.meka.im/).
 
 <details>
 <summary><strong>Show the manual Header Auth import and sheet setup</strong></summary>
@@ -121,8 +114,9 @@ charge for their services.
    n8n execution and the actual sheet. Activate the schedule only after that
    test succeeds.
 
-The manual Header Auth import is available now. No public n8n template URL or
-template ID exists yet.
+The manual Header Auth import is available now. The separate n8n Creator
+template submission is still pending; this fallback does not depend on that
+template being approved.
 
 Tested locally and on n8n Cloud, including duplicate skipping.
 [Validation details](docs/acceptance.md) explain the evidence scope and limits.
@@ -261,18 +255,22 @@ Each selected command writes Dataset items to `jobs.json`. Change [examples/inpu
 
 ## FAQ
 
-- **Which setup should I use?** Use [Cloud auto-setup](docs/cloud-setup.md) for managed Apify/Google OAuth and automatic spreadsheet creation in n8n Cloud. Use the [Header Auth fallback](#header-auth-fallback) for self-hosted n8n, unavailable Apify OAuth, or a dedicated smaller-permission token. Use the [one-command start](#one-command-start) for a local API or Docker-based n8n path.
+- **Which setup should I use?** For n8n Cloud, start with the hosted [Install to n8n Cloud](https://install.meka.im/) flow. Use the [manual Cloud JSON fallback](docs/cloud-setup.md#manual-json-fallback) only when the installer or required MCP access is unavailable. Use the [Header Auth fallback](#header-auth-fallback) for self-hosted n8n, unavailable Apify OAuth, or a dedicated smaller-permission token. Use the [one-command start](#one-command-start) for a local API or Docker-based n8n path.
 - **Does this cover every LinkedIn job in a market?** No. Results are bounded by the Actor input, public availability, search ranking, enrichment outcomes, and spending cap. Use focused searches for broader practical coverage.
-- **Is importing the Cloud JSON enough?** No. Importing does not bind credential IDs. Create or choose the two OAuth credentials, set their allowed HTTP domains, open every credential-bearing node, confirm the matching credential, save, choose the search, and run a manual test. The workflow creates and reuses the spreadsheet and exact `Jobs` header for you.
-- **Does the Cloud variant need me to copy a token, sheet ID, or header?** No. Choose managed OAuth and confirm every credential-bearing node. The sheet and ten-column header are created by the workflow. The original Header Auth workflow remains the optional path that uses a dedicated Apify API token and a pre-created sheet.
-- **Is a one-click or two-click official template available?** No. The official n8n template is still pending human review; there is no public template ID or URL yet. Do not expect a click-to-run setup. Account connection and per-node credential confirmation remain required.
-- **Where do keys and Google access live?** In your n8n credentials. Both workflow JSON files and the repository contain no token, account name, or spreadsheet ID. MEKA does not receive access to your Google credentials.
+- **Do I need to import the Cloud JSON manually?** Not for the hosted n8n Cloud path. The installer submits the fixed workflow with all 14 explicit credential references and creates one inactive copy. The manual JSON fallback still requires opening and confirming all 14 credential-bearing nodes because import does not carry credential IDs.
+- **Does the installer run jobs or create the sheet immediately?** No. It creates one inactive workflow. A paid Actor run happens only when you choose to run it, and the first Manual Trigger creates or reuses the tagged spreadsheet and exact `Jobs` header.
+- **Is the n8n Creator template approved?** No. The hosted installer is a separate MEKA entry and does not depend on Creator-template approval. The pending Creator submission is not described here as an approved public template.
+- **Where do keys and Google access live?** Apify and Google secrets stay in your n8n credentials. During installation, the n8n OAuth access token is sent in an authorization header and passes transiently through the MEKA relay at `install.meka.im`; it is not stored by MEKA. The installer does not read or export Apify or Google credential secrets.
 - **Is it free?** The example code is MIT licensed, but Apify and n8n may charge for their services. Check current [Actor pricing](https://apify.com/meka.im/linkedin-jobs-scraper) and [n8n pricing](https://n8n.io/pricing/).
 
 ## Documentation
 
-- [Cloud auto-setup guide](docs/cloud-setup.md): managed OAuth, automatic spreadsheet/header setup, persistence, recovery, and troubleshooting.
-- [Cloud auto-setup acceptance](validation/2026-10-25/cloud-auto-setup-acceptance.json): sanitized n8n Cloud 2.45.3 Experimental OAuth and two-run evidence.
+- [n8n Cloud installer](https://install.meka.im/): hosted installation entry.
+- [Installer guide](docs/installer.md): prerequisites, OAuth/MCP scope boundary, deployment security, recovery, and evidence.
+- [Hosted installer acceptance](validation/2026-10-26/cloud-installer-hosted-acceptance.json): sanitized deployment, endpoint, OAuth, and inactive-workflow evidence.
+- [Manual Cloud JSON setup guide](docs/cloud-setup.md): fallback import, all 14 credential bindings, automatic spreadsheet/header setup, persistence, recovery, and troubleshooting.
+- [Local installer and two-run acceptance](validation/2026-10-26/cloud-installer-local-acceptance.json): local installation plus the live manual Actor runs referenced by the hosted evidence.
+- [Cloud auto-setup acceptance](validation/2026-10-25/cloud-auto-setup-acceptance.json): historical sanitized n8n Cloud OAuth and two-run evidence.
 - [Setup guide](docs/setup.md): one-command API and local n8n startup, original Header Auth import, credentials, sheet creation, test, and troubleshooting.
 - [Technical reference](docs/reference.md): request sequence, polling, result semantics, failures, security, and tests.
 - [Acceptance notes](docs/acceptance.md): local and n8n Cloud evidence, limits, and dated measurement links.

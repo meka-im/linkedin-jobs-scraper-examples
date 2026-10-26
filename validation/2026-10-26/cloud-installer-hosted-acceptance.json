@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "measurement": "cloud-installer-hosted-acceptance",
+  "date": "2026-10-26",
+  "measurementTimezone": "Asia/Shanghai",
+  "hosted": true,
+  "runtime": {
+    "provider": "n8n Cloud",
+    "version": "2.45.3",
+    "environment": "Experimental"
+  },
+  "deployment": {
+    "service": "meka-n8n-installer",
+    "customDomain": "https://install.meka.im/",
+    "runtimeSourceRevision": "67b67aed15e3cfb10d7947f7f009abd943577d3d",
+    "workersDevEnabled": false,
+    "previewUrlsEnabled": false
+  },
+  "artifact": {
+    "path": "n8n/linkedin-jobs-cloud.json",
+    "sha256": "fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b"
+  },
+  "publicSmoke": {
+    "gets": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/assets/banner.svg",
+        "status": 200
+      }
+    ],
+    "securityHeaders": {
+      "contentSecurityPolicy": true,
+      "xFrameOptionsDeny": true,
+      "referrerPolicyNoReferrer": true
+    },
+    "negativeChecks": [
+      {
+        "case": "foreign-origin",
+        "status": 403
+      },
+      {
+        "case": "foreign-target",
+        "status": 400
+      },
+      {
+        "case": "execute-workflow-tool",
+        "status": 400
+      },
+      {
+        "case": "node-server-source",
+        "status": 404
+      },
+      {
+        "case": "wrangler-config",
+        "status": 404
+      }
+    ]
+  },
+  "oauth": {
+    "hosted": true,
+    "scopes": [
+      "workflow:read",
+      "workflow:write",
+      "credential:read"
+    ],
+    "authorizationCompleted": true,
+    "credentialSelection": {
+      "apifyOAuth2CredentialsFound": 1,
+      "googleSheetsOAuth2CredentialsFound": 1,
+      "automaticallyIdentified": true
+    }
+  },
+  "installation": {
+    "workflowsCreated": 1,
+    "validationPassed": true,
+    "detailsReadbackPassed": true,
+    "installationVerified": true,
+    "nodeCount": 41,
+    "connectionCount": 39,
+    "timezone": "UTC",
+    "active": false,
+    "availableInMCP": true
+  },
+  "credentialBinding": {
+    "submittedApifyReferences": 4,
+    "submittedGoogleReferences": 10,
+    "submittedTotal": 14,
+    "officialUiExportVerified": true,
+    "verificationStatus": "verified-release-owner",
+    "oneCredentialPerProvider": true,
+    "matchesLocalRunCredentialSets": true,
+    "credentialIdsIncluded": false
+  },
+  "exportComparison": {
+    "nodeCount": 41,
+    "connectionCount": 39,
+    "active": false,
+    "timezone": "UTC",
+    "availableInMCP": true,
+    "pinDataEmpty": true,
+    "connectionGraphConsistent": true,
+    "businessCodeConsistent": true,
+    "explicitParametersConsistent": true,
+    "executionOptionsConsistent": true,
+    "difference": "n8n export omitted known default parameters"
+  },
+  "execution": {
+    "hosted": true,
+    "manualTriggers": 0,
+    "paidActorRuns": 0,
+    "googleSheetsCreated": 0,
+    "uiLogsEmpty": true,
+    "scheduleActive": false,
+    "published": false
+  },
+  "relatedEvidence": {
+    "liveActorAndManualRuns": {
+      "path": "validation/2026-10-26/cloud-installer-local-acceptance.json",
+      "hosted": false,
+      "manualRuns": 2,
+      "liveActorRuns": 2
+    }
+  },
+  "privacy": {
+    "n8nAccessTokenPersistedByInstaller": false,
+    "apifyOrGoogleSecretsReadByInstaller": false,
+    "privateResourceIdentifiersIncluded": false
+  },
+  "claimBoundaries": {
+    "zeroConfiguration": false,
+    "clickToRun": false,
+    "creatorTemplateApproved": false,
+    "credentialExportBindingVerified": true,
+    "hostedPaidRunPerformed": false
+  }
+}

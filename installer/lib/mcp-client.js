@@ -1,4 +1,9 @@
 import { InstallerError } from './errors.js';
+import {
+  EXECUTION_RESPONSE_POLICY_VERSION,
+  sanitizeExecutionToolValue,
+  validateSanitizedExecutionToolValue,
+} from './relay-response-policy.js';
 
 const CLIENT_INFO = Object.freeze({
   name: 'MEKA n8n Cloud installer',
@@ -261,7 +266,7 @@ export class McpClient {
     if (missing.length > 0) {
       throw new InstallerError(
         'MCP_TOOLS_UNAVAILABLE',
-        `This workspace does not expose the required MCP tools: ${missing.join(', ')}.`,
+        `Reconnect to n8n with workflow:read, workflow:write, credential:read, workflow:execute, and execution:read. The required MCP tools are unavailable: ${missing.join(', ')}.`,
       );
     }
   }
@@ -277,6 +282,19 @@ export class McpClient {
         },
       },
     );
-    return toolPayload(result, name);
+    const payload = toolPayload(result, name);
+    if (name !== 'execute_workflow' && name !== 'get_workflow_execution') {
+      return payload;
+    }
+    try {
+      return this.transport.responsePolicy === EXECUTION_RESPONSE_POLICY_VERSION
+        ? validateSanitizedExecutionToolValue(name, args, payload)
+        : sanitizeExecutionToolValue(name, args, payload);
+    } catch {
+      throw new InstallerError(
+        'MCP_EXECUTION_RESPONSE_INVALID',
+        'n8n returned execution data that could not be accepted without exposing private run details.',
+      );
+    }
   }
 }

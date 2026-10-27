@@ -88,6 +88,7 @@ export function createSameOriginRelayTransport({
 
   return {
     mode: 'same-origin-relay',
+    responsePolicy: 'execution-response-v1',
     workspaceOrigin: workspace.origin,
     async post(message, metadata = {}) {
       const headers = {

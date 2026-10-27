@@ -18,6 +18,7 @@ export const CREDENTIAL_NODE_NAMES = Object.freeze({
     'Mark Spreadsheet Ready',
     'Read Existing Jobs',
     'Append Rows',
+    'Read Written Jobs',
   ]),
 });
 
@@ -153,9 +154,11 @@ export function renderWorkflowCode({
     markerCounts.apify !== CREDENTIAL_NODE_NAMES.apifyOAuth2Api.length
     || markerCounts.google !== CREDENTIAL_NODE_NAMES.googleSheetsOAuth2Api.length
   ) {
+    const expectedBindings = CREDENTIAL_NODE_NAMES.apifyOAuth2Api.length
+      + CREDENTIAL_NODE_NAMES.googleSheetsOAuth2Api.length;
     throw new InstallerError(
       'TEMPLATE_INVALID',
-      'The workflow template does not contain the expected 14 credential bindings.',
+      `The workflow template does not contain the expected ${expectedBindings} credential bindings.`,
     );
   }
 

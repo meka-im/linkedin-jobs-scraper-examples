@@ -18,6 +18,7 @@ export const cloudWorkflowPath = path.join(
 
 export const cloudCodeFiles = {
   validateSettings: 'validate-cloud-settings.js',
+  inputValidation: 'input-validation.js',
   assessDriveSearch: 'assess-drive-search.js',
   assessDriveCreate: 'assess-drive-create.js',
   assessSpreadsheetMetadata: 'assess-spreadsheet-metadata.js',
@@ -26,6 +27,7 @@ export const cloudCodeFiles = {
   assessEmptyWorksheet: 'assess-empty-worksheet.js',
   assessJobsHeaderWrite: 'assess-jobs-header-write.js',
   assessSetupReady: 'assess-setup-ready.js',
+  assessRunSummary: 'assess-run-summary.js',
 };
 
 const node = (id, name, type, typeVersion, position, parameters, extra = {}) => ({
@@ -87,6 +89,7 @@ const googleHttpNode = (
   url,
   position,
   parameters = {},
+  extra = {},
 ) => node(
   id,
   name,
@@ -113,6 +116,7 @@ const googleHttpNode = (
     retryOnFail: false,
     onError: 'continueRegularOutput',
     alwaysOutputData: true,
+    ...extra,
   },
 );
 
@@ -451,7 +455,8 @@ function moveCoreNodes(workflow) {
     'Has New Jobs?': [5220, -200],
     'Split Out New Jobs': [5460, -300],
     'Append Rows': [5700, -300],
-    'Run Summary': [5940, -200],
+    'Read Written Jobs': [5940, -360],
+    'Run Summary': [6180, -200],
     'Wait for Actor': [3780, 120],
     'Poll Actor Run': [4020, 120],
     'Assess Polled Run': [4260, 120],
@@ -502,6 +507,14 @@ function addConnections(workflow) {
     'Assess Header Write': { main: main('Mark Spreadsheet Ready') },
     'Mark Spreadsheet Ready': { main: main('Assess Setup Ready') },
     'Assess Setup Ready': { main: main('Input Validation') },
+    'Has New Jobs?': {
+      main: [
+        [{ node: 'Split Out New Jobs', type: 'main', index: 0 }],
+        [{ node: 'Read Written Jobs', type: 'main', index: 0 }],
+      ],
+    },
+    'Append Rows': { main: main('Read Written Jobs') },
+    'Read Written Jobs': { main: main('Run Summary') },
   });
 }
 
@@ -558,6 +571,42 @@ export function buildCloudWorkflow(source, code) {
     ...addCloudBootstrapNodes(workflow, code),
     ...preservedCoreNodes,
   ];
+
+  const runSummary = workflow.nodes.find(({ name }) => name === 'Run Summary');
+  if (!runSummary) throw new Error('Run Summary node was not found');
+  runSummary.parameters.jsCode = code.assessRunSummary;
+
+  const inputValidation = workflow.nodes.find(
+    ({ name }) => name === 'Input Validation',
+  );
+  if (!inputValidation) throw new Error('Input Validation node was not found');
+  inputValidation.parameters.jsCode = code.inputValidation;
+
+  workflow.nodes.push(
+    googleHttpNode(
+      '42b7767b-2dc4-40cc-82f2-2131cf57eb1d',
+      'Read Written Jobs',
+      'GET',
+      "={{ 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent($('Input Validation').first().json.sheetId) + '/values/Jobs!A%3AJ' }}",
+      [5940, -360],
+      {
+        sendQuery: true,
+        queryParameters: {
+          parameters: [
+            {
+              name: 'majorDimension',
+              value: 'ROWS',
+            },
+            {
+              name: 'valueRenderOption',
+              value: 'FORMATTED_VALUE',
+            },
+          ],
+        },
+      },
+      { executeOnce: true },
+    ),
+  );
 
   moveCoreNodes(workflow);
   addConnections(workflow);

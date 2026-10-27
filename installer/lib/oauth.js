@@ -11,6 +11,8 @@ export const REQUIRED_SCOPES = Object.freeze([
   'workflow:read',
   'workflow:write',
   'credential:read',
+  'workflow:execute',
+  'execution:read',
 ]);
 export const OAUTH_TTL_MS = 10 * 60 * 1000;
 
@@ -418,6 +420,16 @@ export async function finishOAuthConnection({
       );
     }
 
+    const grantedScope = typeof token.scope === 'string' ? token.scope : stored.scope;
+    const granted = new Set(grantedScope.split(/\s+/u).filter(Boolean));
+    const missingScopes = REQUIRED_SCOPES.filter((scope) => !granted.has(scope));
+    if (missingScopes.length > 0) {
+      throw new InstallerError(
+        'OAUTH_SCOPE_MISSING',
+        `n8n did not grant the required scopes: ${missingScopes.join(', ')}. Reconnect and approve the current installer scopes.`,
+      );
+    }
+
     const workspace = parseWorkspaceUrl(stored.workspaceOrigin);
     return {
       accessToken: token.access_token,
@@ -425,7 +437,7 @@ export async function finishOAuthConnection({
       expiresAt: Number.isFinite(Number(token.expires_in))
         ? now + Number(token.expires_in) * 1000
         : null,
-      scope: typeof token.scope === 'string' ? token.scope : stored.scope,
+      scope: grantedScope,
       workspace,
       mcpUrl: stored.mcpUrl,
     };

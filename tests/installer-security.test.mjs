@@ -36,7 +36,13 @@ function oauthBodies(overrides = {}) {
     protected: {
       resource: `${ORIGIN}/mcp-server/http`,
       authorization_servers: [ORIGIN],
-      scopes_supported: ['workflow:read', 'workflow:write', 'credential:read'],
+      scopes_supported: [
+        'workflow:read',
+        'workflow:write',
+        'credential:read',
+        'workflow:execute',
+        'execution:read',
+      ],
       ...overrides.protected,
     },
     metadata: {
@@ -57,7 +63,13 @@ function oauthBodies(overrides = {}) {
       access_token: 'memory-only-token',
       token_type: 'Bearer',
       expires_in: 3600,
-      scope: 'workflow:read workflow:write credential:read',
+      scope: [
+        'workflow:read',
+        'workflow:write',
+        'credential:read',
+        'workflow:execute',
+        'execution:read',
+      ].join(' '),
       ...overrides.token,
     },
   };
@@ -151,6 +163,16 @@ test('OAuth authorization completes once and removes verifier and state from sto
   });
   assert.equal(new URL(begun.authorizationUrl).searchParams.get('code_challenge_method'), 'S256');
   assert.equal(new URL(begun.authorizationUrl).searchParams.get('resource'), `${ORIGIN}/mcp-server/http`);
+  assert.deepEqual(
+    new URL(begun.authorizationUrl).searchParams.get('scope')?.split(' '),
+    [
+      'workflow:read',
+      'workflow:write',
+      'credential:read',
+      'workflow:execute',
+      'execution:read',
+    ],
+  );
   assert.ok(storage.get('meka.n8n.installer.oauth'));
 
   const callback = new URL(REDIRECT);
@@ -229,22 +251,86 @@ test('OAuth callback rejects cancel, expiry, issuer mismatch, and callback repla
   }
 });
 
-test('redirect URI and relay policy reject broad or execution-capable access', () => {
+test('redirect URI and relay policy allow only exact manual execution reads', () => {
   assert.throws(() => normalizeRedirectUri('https://installer.example/?next=evil'), {
     code: 'REDIRECT_URI_INVALID',
   });
   assert.equal(validateRelayTarget(ORIGIN).mcpUrl, `${ORIGIN}/mcp-server/http`);
   assert.throws(() => validateRelayTarget('https://attacker.example'), InstallerError);
-  assert.deepEqual(
-    validateMcpRpcBody({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name: 'validate_workflow', arguments: { code: 'x' } },
+
+  const toolCall = (name, args) => ({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'tools/call',
+    params: { name, arguments: args },
+  });
+  const workflowCode = '// LinkedIn jobs to Google Sheets (Cloud auto-setup)';
+  assert.deepEqual(validateMcpRpcBody(toolCall('validate_workflow', { code: workflowCode })), {
+    method: 'tools/call',
+    toolName: 'validate_workflow',
+    toolArguments: { code: workflowCode },
+  });
+  assert.deepEqual(validateMcpRpcBody(toolCall('execute_workflow', {
+    workflowId: 'workflow-123',
+    executionMode: 'manual',
+    triggerNodeName: 'Manual Trigger',
+  })), {
+    method: 'tools/call',
+    toolName: 'execute_workflow',
+    toolArguments: {
+      workflowId: 'workflow-123',
+      executionMode: 'manual',
+      triggerNodeName: 'Manual Trigger',
+    },
+  });
+  assert.deepEqual(validateMcpRpcBody(toolCall('get_workflow_execution', {
+    workflowId: 'workflow-123',
+    executionId: 'execution-123',
+    includeData: false,
+  })), {
+    method: 'tools/call',
+    toolName: 'get_workflow_execution',
+    toolArguments: {
+      workflowId: 'workflow-123',
+      executionId: 'execution-123',
+      includeData: false,
+    },
+  });
+
+  for (const body of [
+    toolCall('execute_workflow', {
+      workflowId: 'workflow-123',
+      executionMode: 'manual',
+      triggerNodeName: 'Manual Trigger',
+      extra: true,
     }),
-    { method: 'tools/call', toolName: 'validate_workflow' },
-  );
-  for (const name of ['execute_workflow', 'publish_workflow', 'archive_workflow', 'install_community_node']) {
+    toolCall('execute_workflow', {
+      workflowId: 'workflow-123',
+      executionMode: 'production',
+      triggerNodeName: 'Manual Trigger',
+    }),
+    toolCall('get_workflow_execution', {
+      workflowId: 'workflow-123',
+      executionId: 'execution-123',
+      includeData: true,
+      nodeNames: ['Run Summary'],
+      truncateData: 1,
+    }),
+    toolCall('get_workflow_execution', {
+      workflowId: 'workflow-123',
+      executionId: 'execution-123',
+      includeData: false,
+      extra: true,
+    }),
+  ]) {
+    assert.throws(() => validateMcpRpcBody(body), InstallerError);
+  }
+  for (const name of [
+    'publish_workflow',
+    'archive_workflow',
+    'install_community_node',
+    'test_workflow',
+  ]) {
     assert.throws(() => validateMcpRpcBody({
       jsonrpc: '2.0',
       id: 1,

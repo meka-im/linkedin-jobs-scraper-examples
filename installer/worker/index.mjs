@@ -4,6 +4,7 @@ import {
   validateRelayRoutingHeaders,
   validateRelayTarget,
 } from '../lib/relay-request-policy.js';
+import { sanitizeMcpResponseBody } from '../lib/relay-response-policy.js';
 import { SECURITY_HEADERS } from '../lib/security-headers.js';
 
 const MAX_REQUEST_BYTES = 320_000;
@@ -245,6 +246,12 @@ async function relayMcp(request, origin, { fetchImpl, env }) {
       origin,
     );
   }
+  responseBody = sanitizeMcpResponseBody({
+    toolName: rpc.toolName,
+    arguments: rpc.toolArguments,
+    contentType,
+    body: responseBody,
+  });
 
   const headersOut = commonHeaders(origin);
   headersOut.set('Content-Type', contentType);

@@ -27,6 +27,7 @@ const googleHttpNodes = [
   'Confirm Jobs Worksheet Empty',
   'Write Jobs Header',
   'Mark Spreadsheet Ready',
+  'Read Written Jobs',
 ];
 const expectedHeader = [
   'id',
@@ -72,11 +73,17 @@ test.before(async () => {
   assert.equal(serializedWorkflow, cloudText);
 });
 
-function executeCloudCode(jsCode, { input = [], named = {}, id = workflowId } = {}) {
+function executeCloudCode(jsCode, {
+  input = [],
+  named = {},
+  id = workflowId,
+  execution = { id: 'execution_123', mode: 'test' },
+} = {}) {
   const toItems = (items) => items.map((json) => ({ json }));
   const inputItems = toItems(input);
   const context = {
     $workflow: id == null ? undefined : { id },
+    $execution: execution,
     $input: {
       all: () => inputItems,
       first: () => inputItems[0],
@@ -118,9 +125,13 @@ const cloudSettingsInput = {
   spreadsheetTitle: 'LinkedIn jobs',
 };
 
-async function validatedSettings(overrides = {}) {
+async function validatedSettings(
+  overrides = {},
+  { mode = 'test' } = {},
+) {
   const [output] = await executeCloudCode(codeNode('Validate Cloud Settings'), {
     input: [{ ...cloudSettingsInput, ...overrides }],
+    execution: { id: 'execution_123', mode },
   });
   return output.json;
 }
@@ -293,20 +304,54 @@ test('all legacy core nodes and core connections remain unchanged outside authen
     'Has New Jobs?',
     'Split Out New Jobs',
     'Append Rows',
+    'Read Written Jobs',
     'Run Summary',
   ]);
   for (const name of coreNames) {
+    if (name === 'Read Written Jobs') {
+      const readback = nodeByName(workflow, name);
+      assert.equal(readback.type, 'n8n-nodes-base.httpRequest');
+      assert.equal(readback.typeVersion, 4.2);
+      assert.equal(readback.executeOnce, true);
+      assert.equal(
+        readback.parameters.url,
+        "={{ 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent($('Input Validation').first().json.sheetId) + '/values/Jobs!A%3AJ' }}",
+      );
+      continue;
+    }
     const original = nodeByName(source, name);
     const cloud = nodeByName(workflow, name);
     assert.equal(cloud.type, original.type, name);
     assert.equal(cloud.typeVersion, original.typeVersion, name);
-    if (apifyHttpNodes.includes(name)) continue;
+    if (
+      apifyHttpNodes.includes(name)
+      || name === 'Input Validation'
+      || name === 'Run Summary'
+      || name === 'Read Written Jobs'
+    ) continue;
     assert.deepEqual(cloud.parameters, original.parameters, name);
   }
   for (const [name, connection] of Object.entries(source.connections)) {
     if (!coreNames.has(name)) continue;
+    if (name === 'Has New Jobs?' || name === 'Append Rows') continue;
     assert.deepEqual(workflow.connections[name], connection, name);
   }
+  assert.equal(
+    nodeByName(workflow, 'Input Validation').parameters.jsCode,
+    code.inputValidation,
+  );
+  assert.deepEqual(workflow.connections['Has New Jobs?'], {
+    main: [
+      [{ node: 'Split Out New Jobs', type: 'main', index: 0 }],
+      [{ node: 'Read Written Jobs', type: 'main', index: 0 }],
+    ],
+  });
+  assert.deepEqual(workflow.connections['Append Rows'], {
+    main: [[{ node: 'Read Written Jobs', type: 'main', index: 0 }]],
+  });
+  assert.deepEqual(workflow.connections['Read Written Jobs'], {
+    main: [[{ node: 'Run Summary', type: 'main', index: 0 }]],
+  });
   assert.deepEqual(
     workflow.connections['Assess Setup Ready'].main[0],
     [{ node: 'Input Validation', type: 'main', index: 0 }],
@@ -355,6 +400,90 @@ test('cloud bootstrap validation rejects invalid settings and unsaved workflows 
     input: [{ ...cloudSettingsInput, spreadsheetTitle: '' }],
   });
   assert.equal(blankTitle.json.spreadsheetTitle, 'LinkedIn jobs');
+});
+
+test('manual test mode is clamped while production keeps the requested schedule budget', async () => {
+  const requested = {
+    limit: 1000,
+    budgetUsd: 20,
+    scrapeCompany: true,
+  };
+  const testSettings = await validatedSettings(requested, { mode: 'test' });
+  assert.equal(testSettings.executionMode, 'test');
+  assert.equal(testSettings.manualRun, true);
+  assert.equal(testSettings.limit, 10);
+  assert.equal(testSettings.budgetUsd, 0.05);
+  assert.equal(testSettings.scrapeCompany, false);
+  assert.equal(testSettings.requestedLimit, 1000);
+  assert.equal(testSettings.requestedBudgetUsd, 20);
+  assert.equal(testSettings.requestedScrapeCompany, true);
+
+  const productionSettings = await validatedSettings(requested, {
+    mode: 'production',
+  });
+  assert.equal(productionSettings.executionMode, 'production');
+  assert.equal(productionSettings.manualRun, false);
+  assert.equal(productionSettings.limit, 1000);
+  assert.equal(productionSettings.budgetUsd, 20);
+  assert.equal(productionSettings.scrapeCompany, true);
+
+  for (const execution of [
+    { id: 'execution_123' },
+    { id: 'execution_123', mode: 'manual' },
+    { id: 'execution_123', mode: 'unknown' },
+  ]) {
+    await assert.rejects(
+      executeCloudCode(codeNode('Validate Cloud Settings'), {
+        input: [cloudSettingsInput],
+        execution,
+      }),
+      /\$execution\.mode must be either test or production/u,
+    );
+  }
+});
+
+test('Input Validation preserves the final manual-run guard for Run Summary', async () => {
+  const testSettings = await validatedSettings(
+    { limit: 1000, budgetUsd: 20, scrapeCompany: true },
+    { mode: 'test' },
+  );
+  const [validated] = await executeCloudCode(codeNode('Input Validation'), {
+    input: [{
+      ...testSettings,
+      sheetId: 'sheet_123',
+      sheetName: 'Jobs',
+    }],
+    execution: { id: 'execution_123', mode: 'test' },
+  });
+  assert.equal(validated.json.executionMode, 'test');
+  assert.equal(validated.json.manualRun, true);
+  assert.equal(validated.json.limit, 10);
+  assert.equal(validated.json.budgetUsd, 0.05);
+  assert.equal(validated.json.scrapeCompany, false);
+  assert.equal(validated.json.workflowId, workflowId);
+  assert.equal(validated.json.sheetId, 'sheet_123');
+  assert.equal(validated.json.count, 10);
+  assert.equal(validated.json.limitPerSource, 10);
+
+  await assert.rejects(
+    executeCloudCode(codeNode('Input Validation'), {
+      input: [{
+        ...validated.json,
+        budgetUsd: 0.06,
+      }],
+      execution: { id: 'execution_123', mode: 'test' },
+    }),
+    /10-job, \$0\.05/u,
+  );
+  await assert.rejects(
+    executeCloudCode(codeNode('Input Validation'), {
+      input: [{
+        ...validated.json,
+        executionMode: 'unknown',
+      }],
+    }),
+    /executionMode/u,
+  );
 });
 
 test('Drive lookup chooses no file, one pending or ready file, and rejects ambiguous pages', async () => {
@@ -705,12 +834,8 @@ test('header write and ready marker preserve the resolved spreadsheet for the or
     },
   });
   assert.deepEqual(ready.json, {
-    keywords: cloudSettingsInput.keywords,
-    location: cloudSettingsInput.location,
-    datePosted: cloudSettingsInput.datePosted,
-    limit: cloudSettingsInput.limit,
-    budgetUsd: cloudSettingsInput.budgetUsd,
-    scrapeCompany: cloudSettingsInput.scrapeCompany,
+    ...structure,
+    ...added,
     sheetId: 'sheet_123',
     sheetName: 'Jobs',
     spreadsheetTitle: cloudSettingsInput.spreadsheetTitle,
@@ -779,6 +904,196 @@ test('HTTP status failures stop before the paid core chain across the bootstrap'
   }
 });
 
+test('manual Run Summary requires independent sheet readback and rejects incomplete evidence', async () => {
+  const config = await validatedSettings(
+    { limit: 1000, budgetUsd: 20, scrapeCompany: true },
+    { mode: 'test' },
+  );
+  const priorRows = [{
+    id: '100',
+    title: 'Existing role',
+    company: 'Existing Co',
+    location: 'London',
+    postedAt: '2026-10-26',
+    url: 'https://www.linkedin.com/jobs/view/100',
+    salary: '',
+    employmentType: 'FULL_TIME',
+    seniority: 'SENIOR',
+    firstSeenAt: '2026-10-26T10:00:00.000Z',
+  }];
+  const newJobs = [
+    {
+      id: '101',
+      title: 'Backend engineer',
+      company: 'Readback Co',
+      location: 'Remote',
+      postedAt: '2026-10-27',
+      url: 'https://www.linkedin.com/jobs/view/101',
+      salary: '$100k',
+      employmentType: 'FULL_TIME',
+      seniority: 'MID',
+      firstSeenAt: '2026-10-27T10:00:00.000Z',
+    },
+    {
+      id: '102',
+      title: 'Platform engineer',
+      company: 'Readback Co',
+      location: 'London',
+      postedAt: '2026-10-27',
+      url: 'https://www.linkedin.com/jobs/view/102',
+      salary: '',
+      employmentType: 'CONTRACT',
+      seniority: 'SENIOR',
+      firstSeenAt: '2026-10-27T10:00:00.000Z',
+    },
+  ];
+  const row = (job) => expectedHeader.map((field) => String(job[field] ?? ''));
+  const summary = {
+    fetchedCount: 4,
+    newCount: 2,
+    skippedExisting: 1,
+    skippedBatchDuplicates: 1,
+    coverage: 'complete',
+    actorSummary: {
+      failedSearches: 0,
+      failedJobDetails: 0,
+      failedCompanies: 0,
+      stoppedByBudget: false,
+    },
+  };
+  const assess = async ({
+    responseValue = response(200, {
+      values: [expectedHeader, row(priorRows[0]), ...newJobs.map(row)],
+    }),
+    filtered = { summary, newJobs },
+    configValue = config,
+    prior = priorRows,
+  } = {}) => {
+    const [output] = await executeCloudCode(codeNode('Run Summary'), {
+      input: [responseValue],
+      named: {
+        'Filter New IDs': [filtered],
+        'Input Validation': [configValue],
+        'Read Existing Jobs': prior,
+      },
+    });
+    return output.json;
+  };
+
+  const passed = await assess();
+  assert.equal(passed.status, 'passed');
+  assert.equal(passed.testPassed, true);
+  assert.equal(passed.readbackVerified, true);
+  assert.equal(passed.appendedCount, 2);
+  assert.equal(passed.previousRowsUnchanged, true);
+  assert.equal(passed.allFieldsPresent, true);
+  assert.equal(passed.firstSeenAtPresent, true);
+  assert.equal(passed.uniqueIds, true);
+  assert.equal(passed.executionMode, 'test');
+  assert.equal(passed.manualLimit, 10);
+  assert.equal(passed.manualBudgetUsd, 0.05);
+
+  const wrongTitleRows = [
+    expectedHeader,
+    row(priorRows[0]),
+    row({ ...newJobs[0], title: 'Different title' }),
+    row(newJobs[1]),
+  ];
+  const wrongTitle = await assess({
+    responseValue: response(200, { values: wrongTitleRows }),
+  });
+  assert.equal(wrongTitle.status, 'write-unverified');
+  assert.equal(wrongTitle.testPassed, false);
+  assert.equal(wrongTitle.readbackVerified, false);
+
+  const missingFirstSeenRows = structuredClone(wrongTitleRows);
+  missingFirstSeenRows[2][9] = '';
+  const missingFirstSeen = await assess({
+    responseValue: response(200, { values: missingFirstSeenRows }),
+  });
+  assert.equal(missingFirstSeen.status, 'write-unverified');
+  assert.equal(missingFirstSeen.firstSeenAtPresent, false);
+
+  const changedPriorRows = structuredClone(wrongTitleRows);
+  changedPriorRows[1][1] = 'Changed existing role';
+  const changedPrior = await assess({
+    responseValue: response(200, { values: changedPriorRows }),
+  });
+  assert.equal(changedPrior.status, 'write-unverified');
+  assert.equal(changedPrior.previousRowsUnchanged, false);
+  assert.equal(changedPrior.failureCategory, 'sheet-readback-changed-prior-rows');
+
+  const forbidden = await assess({
+    responseValue: response(403, { error: 'secret upstream body' }),
+  });
+  assert.equal(forbidden.status, 'write-unverified');
+  assert.equal(forbidden.failureCategory, 'sheet-read-failed');
+  assert.equal(JSON.stringify(forbidden).includes('secret upstream body'), false);
+
+  const missingCounter = await assess({
+    filtered: {
+      newJobs,
+      summary: {
+        ...summary,
+        actorSummary: {
+          failedSearches: 0,
+          failedJobDetails: 0,
+          stoppedByBudget: false,
+        },
+      },
+    },
+  });
+  assert.equal(missingCounter.status, 'invalid-summary');
+  assert.equal(missingCounter.testPassed, false);
+
+  const missingCoverage = await assess({
+    filtered: {
+      summary: {
+        ...summary,
+        coverage: undefined,
+      },
+      newJobs,
+    },
+  });
+  assert.equal(missingCoverage.status, 'invalid-summary');
+
+  const partial = await assess({
+    filtered: {
+      summary: {
+        ...summary,
+        coverage: 'partial',
+        actorSummary: {
+          ...summary.actorSummary,
+          stoppedByBudget: true,
+        },
+      },
+      newJobs,
+    },
+  });
+  assert.equal(partial.status, 'partial');
+  assert.equal(partial.testPassed, false);
+  assert.equal(partial.failureCategory, 'budget-stopped');
+
+  const noNewRows = await assess({
+    responseValue: response(200, {
+      values: [expectedHeader, row(priorRows[0])],
+    }),
+    filtered: {
+      summary: {
+        ...summary,
+        fetchedCount: 1,
+        newCount: 0,
+        skippedExisting: 1,
+        skippedBatchDuplicates: 0,
+      },
+      newJobs: [],
+    },
+  });
+  assert.equal(noNewRows.status, 'no-new-rows');
+  assert.equal(noNewRows.testPassed, false);
+  assert.equal(noNewRows.readbackVerified, false);
+});
+
 test('the OAuth smoke fixture is read-only, credential-free, and suitable for live UI compatibility checks', async () => {
   const fixturePath = path.join(root, 'tests', 'fixtures', 'cloud-auth-smoke.workflow.json');
   const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
@@ -819,9 +1134,9 @@ test('cloud artifact contains no credential objects, tokens, private spreadsheet
   assert.doesNotMatch(serializedWorkflow, /"pinData"\s*:/);
 });
 
-test('Cloud acceptance evidence is sanitized and matches the exact tested artifact', async () => {
+test('historical Cloud acceptance evidence remains tied to its original artifact', async () => {
   const cloudText = await readFile(cloudWorkflowPath);
-  const acceptedSha256 = createHash('sha256').update(cloudText).digest('hex');
+  const currentSha256 = createHash('sha256').update(cloudText).digest('hex');
   const evidencePath = path.join(
     root,
     'validation',
@@ -832,7 +1147,11 @@ test('Cloud acceptance evidence is sanitized and matches the exact tested artifa
 
   assert.equal(evidence.schemaVersion, 1);
   assert.equal(evidence.measurement, 'cloud-auto-setup-acceptance');
-  assert.equal(evidence.artifacts.cloudWorkflow.sha256, acceptedSha256);
+  assert.equal(
+    evidence.artifacts.cloudWorkflow.sha256,
+    'fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b',
+  );
+  assert.notEqual(currentSha256, evidence.artifacts.cloudWorkflow.sha256);
   assert.equal(evidence.runtime.version, '2.45.3');
   assert.equal(evidence.runtime.environment, 'Experimental');
   assert.equal(evidence.runtime.apifyCommunityNodeVerified, true);

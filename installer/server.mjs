@@ -11,6 +11,7 @@ import {
   validateRelayRoutingHeaders,
   validateRelayTarget,
 } from './lib/relay-policy.js';
+import { sanitizeMcpResponseBody } from './lib/relay-response-policy.js';
 import { SECURITY_HEADERS } from './lib/security-headers.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -224,6 +225,15 @@ async function relayMcp(request, response, { fetchImpl, lookupImpl }) {
     return;
   }
 
+  const contentType = upstream.headers.get('content-type') ?? '';
+  if (
+    !contentType.toLowerCase().startsWith('application/json')
+    && !contentType.toLowerCase().startsWith('text/event-stream')
+  ) {
+    await cancelBody(upstream);
+    sendJson(response, 502, { error: 'The n8n MCP server returned an unsupported response.' });
+    return;
+  }
   let body;
   try {
     body = await readLimitedUpstream(upstream);
@@ -235,9 +245,15 @@ async function relayMcp(request, response, { fetchImpl, lookupImpl }) {
     );
     return;
   }
+  body = sanitizeMcpResponseBody({
+    toolName: rpc.toolName,
+    arguments: rpc.toolArguments,
+    contentType,
+    body,
+  });
   response.writeHead(upstream.status, {
     ...securityHeaders(),
-    'Content-Type': upstream.headers.get('content-type') ?? 'application/json; charset=utf-8',
+    'Content-Type': contentType,
     'Content-Length': body.length,
   });
   response.end(body);

@@ -63,12 +63,12 @@ function assignment(assignments, name) {
 const sdk = await loadSdk();
 const sourceBytes = await readFile(sourcePath);
 const sourceHash = createHash('sha256').update(sourceBytes).digest('hex');
-if (sourceHash !== 'fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b') {
+if (sourceHash !== '26647c7e5742287cc2e797351334f3e09689707b552d3d5fb6142a9a876f5241') {
   throw new Error(`Unexpected Cloud workflow source hash: ${sourceHash}`);
 }
 
 const source = JSON.parse(sourceBytes.toString('utf8'));
-if (source.nodes.length !== 41 || source.active !== false) {
+if (source.nodes.length !== 42 || source.active !== false) {
   throw new Error('The Cloud workflow source does not have the expected graph.');
 }
 
@@ -107,8 +107,8 @@ for (const node of source.nodes) {
   };
   attachedCredentials += 1;
 }
-if (attachedCredentials !== 14) {
-  throw new Error(`Expected 14 credential nodes, found ${attachedCredentials}.`);
+if (attachedCredentials !== 15) {
+  throw new Error(`Expected 15 credential nodes, found ${attachedCredentials}.`);
 }
 
 const generatedBody = sdk.generateWorkflowCode({
@@ -154,8 +154,8 @@ const renderedSample = renderWorkflowCode({
 });
 const parsed = sdk.parseWorkflowCode(stripImports(renderedSample));
 
-if (parsed.nodes.length !== 41 || Object.keys(parsed.connections).length !== 39) {
-  throw new Error('SDK roundtrip did not preserve 41 nodes and 39 connections.');
+if (parsed.nodes.length !== 42 || Object.keys(parsed.connections).length !== 40) {
+  throw new Error('SDK roundtrip did not preserve 42 nodes and 40 connections.');
 }
 if (
   stable(canonicalConnections(parsed.connections))
@@ -191,7 +191,7 @@ const credentialCounts = parsed.nodes.reduce((counts, node) => {
   }
   return counts;
 }, { apify: 0, google: 0 });
-if (credentialCounts.apify !== 4 || credentialCounts.google !== 10) {
+if (credentialCounts.apify !== 4 || credentialCounts.google !== 11) {
   throw new Error(`SDK roundtrip produced unexpected credential counts: ${stable(credentialCounts)}`);
 }
 

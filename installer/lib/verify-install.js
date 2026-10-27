@@ -4,6 +4,11 @@ import {
   searchSettingsFromAssignments,
   verifySettingsProof,
 } from './settings-proof.js';
+import {
+  createWorkflowVersionFingerprint,
+  readWorkflowVersionId,
+} from './workflow-fingerprint.js';
+import { CREDENTIAL_NODE_NAMES } from './workflow-code.js';
 
 function stable(value) {
   if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`;
@@ -81,11 +86,108 @@ function readbackWorkflow(payload) {
   throw new InstallerError('WORKFLOW_READBACK_INVALID', 'n8n returned no workflow graph for verification.');
 }
 
+function expectedCredentialTypes() {
+  return new Map([
+    ...CREDENTIAL_NODE_NAMES.apifyOAuth2Api.map(
+      (name) => [name, 'apifyOAuth2Api'],
+    ),
+    ...CREDENTIAL_NODE_NAMES.googleSheetsOAuth2Api.map(
+      (name) => [name, 'googleSheetsOAuth2Api'],
+    ),
+  ]);
+}
+
+function credentialReadback(actualNodes, apifyCredentialId, googleCredentialId) {
+  if (
+    typeof apifyCredentialId !== 'string'
+    || !apifyCredentialId
+    || typeof googleCredentialId !== 'string'
+    || !googleCredentialId
+  ) {
+    throw new InstallerError(
+      'WORKFLOW_CREDENTIAL_BINDING_UNAVAILABLE',
+      'The installer cannot bind this workflow to the checked Apify and Google credentials.',
+    );
+  }
+  const expected = expectedCredentialTypes();
+  const expectedIds = {
+    apifyOAuth2Api: apifyCredentialId,
+    googleSheetsOAuth2Api: googleCredentialId,
+  };
+  let exposed = 0;
+  let missing = 0;
+  for (const [nodeName, credentialType] of expected) {
+    const node = actualNodes.get(nodeName);
+    if (!node) continue;
+    if (!Object.hasOwn(node, 'credentials')) {
+      missing += 1;
+      continue;
+    }
+    exposed += 1;
+    const credentials = node.credentials;
+    if (
+      !credentials
+      || typeof credentials !== 'object'
+      || Array.isArray(credentials)
+      || !sameJson(Object.keys(credentials).sort(), [credentialType])
+    ) {
+      throw new InstallerError(
+        'WORKFLOW_CREDENTIAL_REFERENCE_MISMATCH',
+        `Node “${nodeName}” does not expose the reviewed credential type.`,
+      );
+    }
+    const reference = credentials[credentialType];
+    const referenceId = typeof reference === 'string'
+      ? reference
+      : reference?.id;
+    if (
+      typeof referenceId !== 'string'
+      || referenceId !== expectedIds[credentialType]
+      || (
+        reference
+        && typeof reference === 'object'
+        && reference.name != null
+        && typeof reference.name !== 'string'
+      )
+    ) {
+      throw new InstallerError(
+        'WORKFLOW_CREDENTIAL_REFERENCE_MISMATCH',
+        `Node “${nodeName}” is not bound to the credential checked by this installer.`,
+      );
+    }
+  }
+  for (const node of actualNodes.values()) {
+    if (
+      Object.hasOwn(node, 'credentials')
+      && !expected.has(node.name)
+    ) {
+      throw new InstallerError(
+        'WORKFLOW_CREDENTIAL_REFERENCE_UNEXPECTED',
+        `Node “${node.name}” has an unexpected credential reference.`,
+      );
+    }
+  }
+  if (exposed > 0 && missing > 0) {
+    throw new InstallerError(
+      'WORKFLOW_CREDENTIAL_REFERENCE_PARTIAL',
+      'n8n exposed only part of the credential-reference graph.',
+    );
+  }
+  return {
+    credentialReferenceReadback: exposed === expected.size
+      ? 'verified'
+      : 'not-exposed',
+    credentialReferenceCount: exposed,
+  };
+}
+
 export async function verifyInstalledWorkflow({
   details,
   manifest,
   settings,
   settingsProof,
+  apifyCredentialId,
+  googleCredentialId,
   workflowId,
   workflowName,
   workspaceOrigin,
@@ -193,19 +295,33 @@ export async function verifyInstalledWorkflow({
     );
   }
 
+  const credentials = credentialReadback(
+    actualNodes,
+    apifyCredentialId,
+    googleCredentialId,
+  );
   const expectedUrl = `${workspaceOrigin}/workflow/${encodeURIComponent(workflowId)}`;
+  const workflowVersionId = readWorkflowVersionId(details);
+  const workflowVersionFingerprint = await createWorkflowVersionFingerprint(details);
   return Object.freeze({
     workflowId,
     workflowName,
     openUrl: expectedUrl,
     graphVerified: true,
+    verificationStatus: 'structure-only',
+    pinDataReadbackVisibility: 'not-exposed',
+    executionPinningCheck: 'required-on-terminal-execution',
+    workflowVersionId,
+    workflowVersionFingerprint,
     connectionCount: manifest.connectionCount,
     nodeCount: manifest.nodeCount,
     active: false,
     timezone: 'UTC',
     availableInMCP: true,
-    credentialBindingsSubmitted: 14,
-    credentialReadbackVisibility: 'not-exposed',
+    credentialBindingsSubmitted: manifest.credentialNodeCounts.apify
+      + manifest.credentialNodeCounts.google,
+    credentialReadbackVisibility: credentials.credentialReferenceReadback,
+    credentialReferenceCount: credentials.credentialReferenceCount,
     searchSettingsReadbackVisibility: settings == null ? 'exact-via-salted-digest' : 'exact',
   });
 }

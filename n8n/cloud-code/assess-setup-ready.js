@@ -56,12 +56,7 @@ if (properties.mekaLinkedinJobsSchemaVersion !== '1') {
 
 return [{
   json: {
-    keywords: state.keywords,
-    location: state.location,
-    datePosted: state.datePosted,
-    limit: state.limit,
-    budgetUsd: state.budgetUsd,
-    scrapeCompany: state.scrapeCompany,
+    ...state,
     sheetId: spreadsheetId,
     sheetName: 'Jobs',
     spreadsheetTitle: state.spreadsheetTitle,

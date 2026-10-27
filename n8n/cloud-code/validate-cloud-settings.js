@@ -51,18 +51,39 @@ const workflowIdQuery = workflowId
   .replaceAll('\\', '\\\\')
   .replaceAll("'", "\\'");
 
+const requestedLimit = positiveInteger(config.limit, 'limit', 1000);
+const executionMode = typeof $execution === 'object'
+  ? String($execution?.mode ?? '').trim()
+  : '';
+if (executionMode !== 'test' && executionMode !== 'production') {
+  throw new Error('$execution.mode must be either test or production');
+}
+const manualRun = executionMode === 'test';
+const effectiveLimit = manualRun
+  ? Math.min(requestedLimit, 10)
+  : requestedLimit;
+const effectiveBudgetUsd = manualRun
+  ? Math.min(budgetUsd, 0.05)
+  : budgetUsd;
+const effectiveScrapeCompany = manualRun ? false : config.scrapeCompany;
+
 return [{
   json: {
     keywords: requiredText(config.keywords, 'keywords'),
     location: requiredText(config.location, 'location'),
     datePosted,
-    limit: positiveInteger(config.limit, 'limit', 1000),
-    budgetUsd,
-    scrapeCompany: config.scrapeCompany,
+    limit: effectiveLimit,
+    budgetUsd: effectiveBudgetUsd,
+    scrapeCompany: effectiveScrapeCompany,
     spreadsheetTitle,
     workflowId,
     workflowIdQuery,
     sheetName: 'Jobs',
     schemaVersion: '1',
+    executionMode,
+    manualRun,
+    requestedLimit,
+    requestedBudgetUsd: budgetUsd,
+    requestedScrapeCompany: config.scrapeCompany,
   },
 }];

@@ -16,6 +16,33 @@ Google Sheet, or publish the schedule. The earlier
 [hosted acceptance](../validation/2026-10-26/cloud-installer-hosted-acceptance.json)
 covers the previous independent hostname and remains historical.
 
+The reliability-onboarding revision adds real account checks, explicit bounded
+execution, strict Sheet readback, and execution-response sanitization. The
+[sanitized 2026-10-27 acceptance evidence](../validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json)
+records three explicitly confirmed paid runs. The frozen predecessor completed
+in 23.138 seconds with 10 fetched jobs, 10 appended rows, complete coverage, no
+failed counters, and a separate browser comparison of all 110 header-and-row
+cells against the Google API result. It executed **Read Written Jobs** once per
+appended item and produced ten identical readback items, so the final artifact
+adds `executeOnce` and does not inherit that pass.
+
+The final artifact's second run completed in 17.362 seconds and saved three
+jobs, but seven job-detail retrievals failed upstream. Its write/readback
+evidence passed for those rows and the UI correctly remained amber **needs
+attention**.
+
+A separately authorized third run supplied the complete pass. The same
+inactive workflow and graph stayed unchanged. It completed in 15.494 seconds
+with 10 fetched jobs, seven new and appended rows, three existing rows skipped,
+complete coverage, zero failed searches/details/companies, no budget stop, and
+the manual guard fixed to 10 jobs, USD 0.05, and no company enrichment. Its
+single readback call completed in 287 milliseconds. Independent Google Sheets
+UI comparison matched all 110 cells, found 10 unique IDs and every
+`firstSeenAt`, and confirmed the prior three-row snapshot's 40 cells remained
+unchanged. The UI showed green **Test passed** only after this verified result;
+the execution link opened the recorded execution. The runtime is a one-run
+snapshot, not a performance promise.
+
 ## Start here
 
 1. In your n8n Cloud workspace, enable **Settings → MCP** and connect your own
@@ -25,14 +52,21 @@ covers the previous independent hostname and remains historical.
    `www.googleapis.com,sheets.googleapis.com`. Keep **All** unselected.
 3. Open the [MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets),
    enter the workspace,
-   authorize `workflow:read`, `workflow:write`, and `credential:read`, then
-   choose one credential of each type and your search settings.
-4. Click **Install inactive workflow** once and wait for **VERIFIED** and
-   **Your workflow is ready to review**. Choose **Open in n8n** after the
-   workflow readback passes.
+   review and authorize `workflow:read`, `workflow:write`, `credential:read`,
+   `workflow:execute`, and `execution:read`, then choose one credential of each
+   type and your search settings.
+4. Click the explicit account-check button. Both the Apify API identity check
+   and the Google read probe must pass before installation is enabled.
+5. Click **Install inactive workflow** once. Success is
+   **Installed · Test required**; the structure-only graph readback is not
+   connection or execution proof.
+6. When ready, tick the bounded-test confirmation and run the small test once.
+   Green **Test passed** requires matched execution evidence and independent
+   Sheet row verification.
 
 The resulting workflow is inactive. Installation does not run the paid Actor,
-create a spreadsheet, publish, or activate the schedule.
+create a spreadsheet, publish, or activate the schedule. The user-confirmed test
+may create or reuse the spreadsheet and call Apify.
 
 ## What it does
 
@@ -51,21 +85,38 @@ It then:
 1. Registers a public OAuth client with the workspace through dynamic client
    registration.
 2. Uses Authorization Code with PKCE S256 in the browser.
-3. Requests `workflow:read`, `workflow:write`, and `credential:read`.
+3. Requests the five exact scopes listed above. These scopes grant broad
+   workspace capabilities, so the product enforces a narrower allowlist for
+   tools, arguments, workflow identity, execution mode, and response data.
 4. Lists only the credential metadata needed to choose one credential of each
    required type.
-5. Renders the fixed SDK workflow template with the selected values and
-   credential IDs.
-6. Calls `validate_workflow` before any create request.
-7. Calls `create_workflow_from_code` once.
-8. Reads the created workflow and verifies 41 nodes, 39 connections, core
-   parameters, UTC settings, `active=false`, and `availableInMCP=true`.
-9. Shows **VERIFIED** and **Your workflow is ready to review**, with
-   **Open in n8n**, only after that verification passes.
+5. Creates or safely reuses one uniquely named inactive six-node account-check
+   workflow. Its fixed GET requests use the selected Apify and Google
+   credentials and return only safe service statuses.
+6. Renders the fixed 42-node SDK workflow template with the selected values and
+   15 credential IDs, then calls `validate_workflow` before creation.
+7. Calls `create_workflow_from_code` once and records `created-unverified`
+   before attempting readback. It verifies 40 connections, all node parameters
+   and execution options, UTC settings, `active=false`, the workflow version,
+   and `availableInMCP=true`.
+8. Shows amber **Installed · Test required**. A missing credential reference in
+   the details response is shown as unavailable rather than treated as proof
+   that the binding failed.
+9. On explicit confirmation, executes only the reviewed inactive workflow with
+   the Manual Trigger. It polls that same execution ID, rechecks the workflow
+   version, rejects pinned or unknown execution data, and validates the
+   sanitized summary plus actual Sheet readback.
 
-The installer does not call `execute_workflow`, `publish_workflow`,
-`archive_workflow`, or any delete operation. It does not run the paid Actor.
-The Daily Schedule remains inactive.
+The installer never calls `test_workflow`, publish, archive, delete,
+schedule-activation, or a generic workflow-update tool. It never executes
+automatically and never retries an ambiguous paid execution.
+
+Every Manual Trigger run in the Cloud workflow is limited to 10 fetched jobs, a
+positive USD budget no greater than 0.05, and `scrapeCompany=false`. The saved
+schedule retains the user's requested limit and budget for a later activation
+the user performs personally. n8n Code nodes use `$execution.mode` values
+`test` for manual runs and `production` for scheduled runs; a missing or
+unknown mode fails closed or receives the conservative manual clamp.
 
 ## n8n prerequisites
 
@@ -225,11 +276,24 @@ The relay enforces:
 - A JSON-only, non-batch JSON-RPC envelope.
 - Discovery, initialization, `notifications/initialized`, and `tools/list`.
 - Tool calls for only `list_credentials`, `validate_workflow`,
-  `create_workflow_from_code`, `get_workflow_details`, and the bounded
-  `search_workflows` recovery lookup.
-- No `execute_workflow`, `publish_workflow`, archive, delete, credential-secret
-  access, or community-package installation.
+  `create_workflow_from_code`, `get_workflow_details`, the bounded
+  `search_workflows` recovery lookup, `execute_workflow`, and
+  `get_workflow_execution`.
+- Exact argument checks for every allowed tool. Execution permits only the
+  `Manual Trigger`; detailed execution reads require the complete reviewed
+  node set, `includeData=true`, and `truncateData=1`.
+- No `test_workflow`, publish, archive, delete, schedule activation,
+  credential-secret access, or community-package installation.
+- Two-stage execution-response sanitation. The backend accepts only the raw n8n
+  execution shape and emits a fixed metadata/summary whitelist plus exact
+  `resultData.pinData` state. The website validates that already sanitized shape
+  again and emits a fresh allowlisted object.
 - No cookies or private upstream response headers forwarded to the browser.
+
+Malformed UTF-8, JSON, or SSE, unknown fields, raw node/context data, upstream
+errors, stack traces, and forged sanitization markers fail closed. Raw upstream
+expression errors can contain node input data, so the Worker neither forwards
+nor logs them.
 
 The Worker runs first for static asset requests so it can attach
 `Content-Security-Policy` with `frame-ancestors 'none'`, `X-Frame-Options:
@@ -289,8 +353,9 @@ The relay:
 - Rejects redirects and MCP batch requests.
 - Permits only discovery, initialization, `tools/list`, and the installer's
   tool calls: `list_credentials`, `validate_workflow`,
-  `create_workflow_from_code`, `get_workflow_details`, and the bounded
-  `search_workflows` recovery lookup.
+  `create_workflow_from_code`, `get_workflow_details`, the bounded
+  `search_workflows` recovery lookup, explicit Manual Trigger execution, and
+  bounded execution reads.
 - Never logs credentials, OAuth tokens, request bodies, or upstream responses.
 - Keeps the OAuth token in browser memory and sends it to the local relay only
   in the authorization header for the duration of an installation.
@@ -306,13 +371,13 @@ The fixed source is
 [`n8n/linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json), SHA-256:
 
 ```text
-fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b
+26647c7e5742287cc2e797351334f3e09689707b552d3d5fb6142a9a876f5241
 ```
 
 The build script uses `@n8n/workflow-sdk` 0.37.2 to generate a fixed SDK
 template and an expected graph manifest. It fails the build if roundtrip
-validation changes the 41-node graph, 39 connection entries, settings, node
-types, parameters, or the 4 Apify plus 10 Google credential bindings.
+validation changes the 42-node graph, 40 connection entries, settings, node
+types, parameters, or the 4 Apify plus 11 Google credential bindings.
 
 At runtime, unique sentinel strings and numbers are replaced with escaped
 JSON/JavaScript literals. The browser does not load the workflow SDK, execute
@@ -323,9 +388,12 @@ does not request a project ID. n8n sets `availableInMCP=true`; this makes the
 created copy available through the same MCP integration. The installer does
 not enumerate unrelated workflows.
 
-The first Manual Trigger creates or reuses one spreadsheet tagged with the new
-workflow ID. The Google bootstrap finishes before the charged Actor start.
-Later runs reuse the same spreadsheet and preserve existing rows and
+The first user-confirmed Manual Trigger creates or reuses one spreadsheet tagged
+with the new workflow ID. The Google bootstrap finishes before the charged
+Actor start. The summary node reads the written rows back and checks all ten
+fields, `firstSeenAt`, ID uniqueness, and that prior rows are unchanged. Zero
+new rows, partial/budget-stopped runs, and write-readback failures remain
+unverified. Later runs reuse the same spreadsheet and preserve existing rows and
 `firstSeenAt` values.
 
 The workflow settings declare `UTC`, and the schedule is 08:00. It remains
@@ -333,19 +401,23 @@ inactive. Review what 08:00 means in the n8n UI before publishing it.
 
 ## Credential verification boundary
 
-The generated code contains all 14 explicit credential references. Before
+The generated code contains all 15 explicit credential references. Before
 creation, the installer checks that the rendered template still has four
-`apifyOAuth2Api` and ten `googleSheetsOAuth2Api` bindings. n8n then validates
+`apifyOAuth2Api` and eleven `googleSheetsOAuth2Api` bindings. n8n then validates
 that the current user can reach those IDs and that the node configuration uses
 matching credential types.
 
 The official `get_workflow_details` response intentionally strips credential
 references from `workflow.nodes`. After creation, the installer therefore
 verifies the graph, parameters, connections, settings, and inactive state. It
-does not claim that the readback exposed the 14 IDs.
+does not claim that the readback exposed the 15 IDs. If n8n exposes all
+references, their exact type, ID, and name are checked; if it exposes only some,
+the readback is treated as unavailable rather than a successful binding test.
 
-The strongest post-create UI check remains n8n's own private **Export** or
-credential-node review in the created workflow.
+The read-only account check separately proves Apify account/API access and
+Google Drive metadata read access. It does not prove that the workflow-created
+Sheet will be writable. Only the explicit test and its independent row readback
+can provide that end-to-end evidence.
 
 ## Failure and recovery
 
@@ -359,6 +431,18 @@ store credential IDs or plaintext search settings. It stores a randomly salted
 SHA-256 digest of the seven submitted search fields. After a reload,
 reconnecting the same workspace restores the Check installation path and
 recomputes that digest from the n8n readback before success is shown.
+
+Immediately after a create response, the marker is saved as
+`created-unverified`. A reload or readback failure therefore still blocks a
+second create. Known execution IDs are resumed; an ambiguous execution with no
+ID blocks another paid run and links the user to n8n for manual execution
+inspection. A changed credential binding cannot silently replace an unresolved
+helper create or execution.
+
+The current recovery key is `meka.n8n.hub.onboarding.v2`. An old unresolved v1
+marker is migrated into a manual-review block and retained as a create guard;
+the installer does not verify a 41-node historical graph against the current
+42-node manifest or discard the evidence.
 
 The recovery action accepts a workflow ID or searches for the exact unique name
 generated for that attempt. Zero matches or multiple matches stop without
@@ -401,6 +485,10 @@ The two live manual Actor runs linked from that evidence were performed on the l
 installer path, not through the hosted service. Public evidence records no
 workspace, account, workflow, run, dataset, credential, or spreadsheet IDs.
 
+Those records describe the previous three-scope, graph-only onboarding flow.
+They do not verify this revision's five scopes, account helper, execution
+sanitization, pin evidence, manual-run clamp, or end-to-end Sheet readback.
+
 ## Offline verification
 
 Run the installer-focused tests:
@@ -411,20 +499,36 @@ npm run test:installer
 
 The suite covers strict workspace and OAuth origin checks, PKCE, one-time
 state, callback expiry and replay, token placement, MCP JSON/SSE parsing,
-protocol fallback, tool pagination, credential selection, all 14 bindings,
+protocol fallback, tool pagination, credential selection, all 15 bindings,
 input escaping, validate-before-create ordering, create-without-retry,
 unknown-result recovery, graph readback, protected artifact hashes, and relay
-method/tool restrictions. Worker tests also cover spoofed Host and Origin,
+method/tool restrictions. Account and execution tests cover the exact
+six-node helper, credential and version binding, same-ID resume, resolution of
+failed versus unknown checks, finite manual limits, strict summary/counter
+coverage, pinned and unknown evidence, zero-new rows, and Sheet write/readback
+failures. Cloud tests also prove `$execution.mode='test'` is clamped while
+`production` keeps the saved schedule settings. Worker tests also cover
+spoofed Host and Origin,
 arbitrary target rejection, redirects, request/response streaming limits,
 private-header stripping, the public-asset allowlist, security headers,
 fail-closed rate limiting, and legacy MCP initialization with both empty `202`
-and `204` notification responses.
+and `204` notification responses. Execution-response tests cover malformed
+UTF-8/JSON/SSE and arbitrary-field sentinels so raw data cannot leak.
 
 The loopback server tests skip only when the test sandbox forbids `listen`.
 Run them outside that sandbox for final acceptance.
 
-The hosted installation path has been exercised separately; see the evidence
-section above. Offline tests remain distinct from that live result. A future
-deployment should still be checked for OAuth redirect behavior, Worker CORS and
-relay limits, credential reachability, workflow readback, and failure messages
-before release.
+The previous hosted installation path has been exercised separately; see the
+dated evidence above. Offline tests remain distinct from any new live result.
+The five scopes, disconnected-account blocking, transient Google rate-limit
+classification flow, successful two-account check, amber installation state,
+and explicitly confirmed bounded paid executions were exercised in the
+isolated controlled preview. The
+[sanitized 2026-10-27 evidence](../validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json)
+records the frozen predecessor's 10-row result, the final artifact's partial
+three-row run, and the final artifact's complete 10-row pass. The complete run
+used one readback call, had complete coverage and zero failed counters, matched
+all 110 current cells and all 40 cells in the prior snapshot, and showed green
+**Test passed** only after verification. The recorded execution link also
+opened successfully. The 15.494-second runtime is a point-in-time measurement,
+not a performance promise.

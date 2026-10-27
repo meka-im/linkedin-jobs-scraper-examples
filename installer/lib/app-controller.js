@@ -30,3 +30,64 @@ export function claimInstallSubmit(state) {
 export function releaseInstallSubmit(state) {
   state.inflightInstall = false;
 }
+
+export function claimConnectionCheck(state) {
+  if (state.inflightConnectionCheck) {
+    return { allowed: false, reason: 'in-flight' };
+  }
+  const check = state.connectionCheck;
+  if (
+    check?.executionRequested === true
+    && !check.executionId
+    && !(
+      check.status === 'failed'
+      && check.phase === 'execute-rejected'
+    )
+  ) {
+    return { allowed: false, reason: 'execution-unknown' };
+  }
+  state.inflightConnectionCheck = true;
+  return { allowed: true, reason: null };
+}
+
+export function releaseConnectionCheck(state) {
+  state.inflightConnectionCheck = false;
+}
+
+export function claimTestSubmit(state, { resume = false } = {}) {
+  if (state.inflightTest) {
+    return { allowed: false, reason: 'in-flight' };
+  }
+  const test = state.testRun;
+  if (resume) {
+    if (
+      test?.executeRequested === true
+      && test.executionId
+      && ['running', 'unknown', 'execute-requested'].includes(test.outcome)
+    ) {
+      state.inflightTest = true;
+      return { allowed: true, reason: null };
+    }
+    return { allowed: false, reason: 'resume-unavailable' };
+  }
+  if (
+    test?.executeRequested === true
+    && !test.executionId
+    && test.failureCategory !== 'execute-rejected'
+  ) {
+    return { allowed: false, reason: 'execution-unknown' };
+  }
+  if (
+    test?.executeRequested === true
+    && test.executionId
+    && ['running', 'unknown', 'execute-requested'].includes(test.outcome)
+  ) {
+    return { allowed: false, reason: 'execution-recorded' };
+  }
+  state.inflightTest = true;
+  return { allowed: true, reason: null };
+}
+
+export function releaseTestSubmit(state) {
+  state.inflightTest = false;
+}

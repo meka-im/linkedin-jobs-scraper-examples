@@ -9,12 +9,16 @@ import { renderWorkflowCode, validateInstallerSettings } from './workflow-code.j
 import { verifyInstalledWorkflow } from './verify-install.js';
 import { parseWorkspaceUrl } from './workspace.js';
 import { createSettingsProof } from './settings-proof.js';
+import { connectionEvidenceIsCurrent } from './connection-check.js';
 
 export const REQUIRED_MCP_TOOLS = Object.freeze([
   'list_credentials',
   'validate_workflow',
   'create_workflow_from_code',
   'get_workflow_details',
+  'search_workflows',
+  'execute_workflow',
+  'get_workflow_execution',
 ]);
 
 function requireClient(client) {
@@ -88,6 +92,7 @@ export async function installWorkflow({
   nonce,
   state = {},
   onStateChange = () => {},
+  now = Date.now(),
 }) {
   requireClient(client);
   if (state.createAttempted) {
@@ -119,6 +124,17 @@ export async function installWorkflow({
     'Google Sheets OAuth',
     GOOGLE_CREDENTIAL_TYPE,
   );
+  if (!connectionEvidenceIsCurrent(state.connectionCheck?.evidence, {
+    workspaceOrigin: workspace.origin,
+    apifyCredentialId: apify.id,
+    googleCredentialId: google.id,
+    now,
+  })) {
+    throw new InstallerError(
+      'CONNECTION_CHECK_REQUIRED',
+      'Check both connected accounts successfully before installing. The saved check expired or belongs to different credentials.',
+    );
+  }
 
   const code = renderWorkflowCode({
     template,
@@ -173,7 +189,10 @@ export async function installWorkflow({
     onStateChange(state);
     throw new InstallerError('CREATE_RESULT_INVALID', 'n8n returned a workflow URL outside the selected workspace.');
   }
-  if (Number.isFinite(created.nodeCount) && created.nodeCount !== 41) {
+  if (
+    Number.isFinite(created.nodeCount)
+    && created.nodeCount !== manifest.nodeCount
+  ) {
     state.status = 'created-unverified';
     onStateChange(state);
     throw new InstallerError('CREATE_RESULT_INVALID', 'n8n created a workflow with the wrong node count.');
@@ -199,6 +218,8 @@ export async function installWorkflow({
       manifest,
       settings: safeSettings,
       settingsProof,
+      apifyCredentialId: apify.id,
+      googleCredentialId: google.id,
       workflowId: created.workflowId,
       workflowName: identity.name,
       workspaceOrigin: expectedOrigin,
@@ -209,10 +230,13 @@ export async function installWorkflow({
     throw error;
   }
 
-  state.status = 'installed';
+  state.workflowVersionId = verified.workflowVersionId;
+  state.workflowVersionFingerprint = verified.workflowVersionFingerprint;
+  state.status = 'installed-pending-test';
   onStateChange(state);
   return Object.freeze({
     ...verified,
+    status: 'installed-pending-test',
     url: created.url,
     name: identity.name,
     nonce,
@@ -227,6 +251,19 @@ export async function recoverUnknownInstallation({
   onStateChange = () => {},
 }) {
   requireClient(client);
+  if (state.legacyReviewRequired === true) {
+    throw new InstallerError(
+      'LEGACY_INSTALL_REVIEW_REQUIRED',
+      'An earlier installer version recorded an unresolved create request for a 41-node workflow. Open n8n and identify that workflow manually; it cannot be verified against the reviewed 42-node graph, and this installer will not create another one automatically.',
+      {
+        safeDetails: {
+          workflowUrl: state.workspaceOrigin && state.workflowId
+            ? `${state.workspaceOrigin}/workflow/${encodeURIComponent(state.workflowId)}`
+            : null,
+        },
+      },
+    );
+  }
   if (
     !['unknown', 'created-unverified'].includes(state.status)
     || !state.createAttempted
@@ -253,11 +290,15 @@ export async function recoverUnknownInstallation({
       manifest,
       settings: state.settings ?? null,
       settingsProof: state.settingsProof,
+      apifyCredentialId: state.connectionCheck?.apifyCredentialId,
+      googleCredentialId: state.connectionCheck?.googleCredentialId,
       workflowId: selectedWorkflowId,
       workflowName: state.identity.name,
       workspaceOrigin: state.workspaceOrigin,
     });
-    state.status = 'installed';
+    state.workflowVersionId = verified.workflowVersionId;
+    state.workflowVersionFingerprint = verified.workflowVersionFingerprint;
+    state.status = 'installed-pending-test';
     state.workflowId = selectedWorkflowId;
     onStateChange(state);
     return verified;
@@ -298,11 +339,15 @@ export async function recoverUnknownInstallation({
     manifest,
     settings: state.settings ?? null,
     settingsProof: state.settingsProof,
+    apifyCredentialId: state.connectionCheck?.apifyCredentialId,
+    googleCredentialId: state.connectionCheck?.googleCredentialId,
     workflowId: matches[0].id,
     workflowName: state.identity.name,
     workspaceOrigin: state.workspaceOrigin,
   });
-  state.status = 'installed';
+  state.workflowVersionId = verified.workflowVersionId;
+  state.workflowVersionFingerprint = verified.workflowVersionFingerprint;
+  state.status = 'installed-pending-test';
   state.workflowId = matches[0].id;
   onStateChange(state);
   return verified;

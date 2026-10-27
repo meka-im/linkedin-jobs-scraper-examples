@@ -4,28 +4,30 @@
 
 ## Recommended: hosted installer
 
-For n8n Cloud, open the **[MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets)**. After a workspace administrator enables **Settings → MCP** and the user connects their Apify OAuth and Google Sheets OAuth credentials, the installer can create one inactive workflow with all 14 explicit credential references without a JSON download or a node-by-node import pass.
+For n8n Cloud, open the **[MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets)**. After a workspace administrator enables **Settings → MCP** and the user connects their Apify OAuth and Google Sheets OAuth credentials, the installer can create one inactive workflow with all 15 explicit credential references without a JSON download or a node-by-node import pass.
 
 Set the credentials' **Allowed HTTP Request Domains** to **Specific Domains**:
 
 - Apify: `api.apify.com`
 - Google: `www.googleapis.com,sheets.googleapis.com`
 
-The n8n OAuth token is used with `workflow:read`, `workflow:write`, and `credential:read`. During installation its MCP requests pass transiently through the MEKA n8n hub relay at `meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
+The n8n OAuth token is used with `workflow:read`, `workflow:write`, `credential:read`, `workflow:execute`, and `execution:read`. The last two are needed for the explicit account check and user-confirmed small test; n8n grants them across the selected workspace, while the product limits calls to reviewed inactive workflows, the Manual Trigger, bounded arguments, and sanitized execution summaries. During installation its MCP requests pass transiently through the MEKA n8n hub relay at `meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
 
-The hosted installer creates the workflow inactive and does not run the Actor or activate the schedule. The first Manual Trigger creates or reuses the tagged spreadsheet and exact `Jobs` header. See the [installer guide](installer.md) and the [production n8n hub acceptance](../validation/2026-10-26/n8n-hub-production-acceptance.json). The separate [historical hosted acceptance](../validation/2026-10-26/cloud-installer-hosted-acceptance.json) applies to the previous independent hostname.
+The hosted installer creates the workflow inactive and shows **Installed · Test required**. It does not execute unless the user later ticks the bounded-test confirmation. Every Manual Trigger run is limited to 10 fetched jobs, a positive budget no greater than USD 0.05, and no company enrichment. Green **Test passed** requires a linked terminal execution, exact pin evidence, unchanged inactive workflow version, and independent Sheet readback. The saved schedule keeps the user's requested limit and budget and remains inactive until the user enables it.
 
-The exact imported artifact, SHA-256 `fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b`, was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. Two Manual Trigger runs completed against one workflow-created spreadsheet, and the schedule remained inactive. The [sanitized acceptance evidence](../validation/2026-10-25/cloud-auto-setup-acceptance.json) contains the run counts and verification boundaries without workspace, account, spreadsheet, run, or execution IDs.
+The historical imported artifact, SHA-256 `fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b`, was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. It predates the current 42-node readback flow. The [historical sanitized acceptance evidence](../validation/2026-10-25/cloud-auto-setup-acceptance.json) remains tied to that artifact.
+
+The [sanitized 2026-10-27 acceptance evidence](../validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json) records the reliability-onboarding preview separately. Its frozen predecessor completed in 23.138 seconds with 10 fetched and appended jobs, complete coverage, zero failed counters, and a 110-cell browser-to-API match. The **Read Written Jobs** node ran once per appended output item and returned ten items, so the final artifact adds `executeOnce`. The final artifact's next run saved three jobs but remained amber because seven job-detail retrievals failed upstream. A separately authorized final run then completed in 15.494 seconds with 10 fetched jobs, seven appended rows, three existing rows skipped, complete coverage, zero failed counters, and no budget stop. Its single readback call completed in 287 milliseconds. Independent UI comparison matched all 110 cells, including 10 unique IDs and every `firstSeenAt`, and the prior three-row snapshot's 40 cells remained unchanged. The UI showed green **Test passed** only after verification, and the execution link opened the recorded execution. The runtime is a one-run snapshot, not a performance promise.
 
 The separate n8n Creator template submission is still pending. It is not required for the hosted installer and this guide does not describe it as an approved public template.
 
 ## Manual JSON fallback
 
 1. Import [`linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json) as a new inactive workflow and save it.
-2. Create or choose the managed **Apify OAuth2** and **Google Sheets OAuth2** credentials. Set the exact HTTP domains described below, then open all 14 credential-bearing nodes, confirm the matching credential, and save.
-3. Set `keywords` and `location`, review the advanced search settings and spending cap, save, and run the **Manual Trigger**. The workflow creates or reuses the tagged spreadsheet and exact `Jobs` header before starting the Actor.
+2. Create or choose the managed **Apify OAuth2** and **Google Sheets OAuth2** credentials. Set the exact HTTP domains described below, then open all 15 credential-bearing nodes, confirm the matching credential, and save.
+3. Set `keywords` and `location`, review the advanced schedule settings and spending cap, save, and run the **Manual Trigger**. That manual run is clamped to 10 fetched jobs, a positive budget no greater than USD 0.05, and no company enrichment. It creates or reuses the tagged spreadsheet and exact `Jobs` header before starting the Actor.
 
-The JSON import does not bind credentials, and Cloud may report `Credentials not found` until the 14-node confirmation pass is saved. This limitation applies to the manual fallback; the hosted installer validates and submits the explicit bindings as part of its installation flow.
+The JSON import does not bind credentials, and Cloud may report `Credentials not found` until the 15-node confirmation pass is saved. This limitation applies to the manual fallback; the hosted installer validates and submits the explicit bindings as part of its installation flow.
 
 ## Accepted Cloud snapshot
 
@@ -55,7 +57,7 @@ After one successful bootstrap, the same workflow ID maps to one Google spreadsh
 
 Bootstrap must complete before `Start Actor`. A Drive, Sheets, schema, HTTP-status, 30-second HTTP timeout, or header validation failure stops the execution before the billable Actor start. Every bootstrap Google HTTP node has an explicit 30-second timeout.
 
-The execution chain keeps the original four Apify HTTP requests and the original Actor `OUTPUT`, polling, result-limit, budget-cap, and no-retry behavior. Only their authentication parameters change to `predefinedCredentialType` / `apifyOAuth2Api`. Existing Google Sheets read, deduplication, `RAW` append, ten-field mapping, and `firstSeenAt` behavior remain unchanged.
+The execution chain keeps the original four Apify HTTP requests and the original Actor `OUTPUT`, polling, result-limit, budget-cap, and no-retry behavior. Only their authentication parameters change to `predefinedCredentialType` / `apifyOAuth2Api`. Existing Google Sheets read, deduplication, `RAW` append, ten-field mapping, and `firstSeenAt` behavior remain in place. A new **Read Written Jobs** node reads the written range before `Run Summary` so manual reviews cannot infer a successful append from input counts alone.
 
 ## Prerequisites
 
@@ -106,6 +108,7 @@ The credential needs access to Drive file search/create/update and Sheets metada
 - **Confirm Jobs Worksheet Empty**
 - **Write Jobs Header**
 - **Mark Spreadsheet Ready**
+- **Read Written Jobs**
 
 Select the same credential on **Read Existing Jobs** and **Append Rows** as well. Credential IDs are intentionally not exported.
 
@@ -113,11 +116,11 @@ OAuth access belongs to the connection created in your n8n instance. Do not comm
 
 ### Confirm credential bindings after import
 
-This workflow has 14 credential-bearing nodes: four Apify HTTP nodes, eight Google bootstrap HTTP nodes, and the original **Read Existing Jobs** and **Append Rows** nodes. Importing the JSON does not carry or bind all credential IDs. After import, open each of the 14 nodes, confirm or select the matching existing credential, and save the workflow.
+This workflow has 15 credential-bearing nodes: four Apify HTTP nodes, nine Google bootstrap/readback HTTP nodes, and the original **Read Existing Jobs** and **Append Rows** nodes. Importing the JSON does not carry or bind all credential IDs. After import, open each of the 15 nodes, confirm or select the matching existing credential, and save the workflow.
 
 When the workspace has exactly one credential of the required type, n8n Cloud may pre-select it as you open a node. It still requires confirmation and saving on each affected node. A first API node can report `Credentials not found` before that binding pass is saved.
 
-In the accepted Cloud workspace, saving the credentials without opening and confirming every node was not sufficient. That preflight stopped at **Assess Drive Search** with HTTP status `NO_STATUS` and the HTTP output `Credentials not found`; it started zero Actor runs. Confirming all 14 bindings resolved the setup issue before any paid run.
+In the historical Cloud workspace, saving the credentials without opening and confirming every node was not sufficient. That preflight stopped at **Assess Drive Search** with HTTP status `NO_STATUS` and the HTTP output `Credentials not found`; it started zero Actor runs. Confirm all 15 bindings in the current JSON before a paid run.
 
 ## 4. Configure the search
 
@@ -143,15 +146,16 @@ There is no `sheetId` field. The workflow resolves the spreadsheet from its Driv
 ## 5. Run the first test
 
 1. Save the workflow and all credential selections.
-2. Run the **Manual Trigger**.
-3. Follow the execution through bootstrap, `Input Validation`, the Actor run, sheet read, ID filtering, and `Run Summary`.
+2. Run the **Manual Trigger** once. The manual guard clamps this run to 10 fetched jobs, a budget no greater than USD 0.05, and no company enrichment.
+3. Follow the execution through bootstrap, `Input Validation`, the Actor run, sheet read, ID filtering, append, `Read Written Jobs`, and `Run Summary`.
 4. Open the generated spreadsheet and confirm that a `Jobs` worksheet contains row 1 with:
 
    ```text
    id	title	company	location	postedAt	url	salary	employmentType	seniority	firstSeenAt
    ```
 
-5. Run the workflow a second time and verify that it reuses the same spreadsheet, reads existing IDs, and appends only unseen jobs.
+5. Inspect the `Run Summary`. It passes only when it reads the written rows back independently and confirms the new IDs, all ten fields, `firstSeenAt`, uniqueness, and unchanged prior rows. Zero new rows, partial coverage, a budget stop, or a failed readback is not a full pass.
+6. Run the workflow a second time and verify that it reuses the same spreadsheet, reads existing IDs, and appends only unseen jobs.
 
 Google may leave the newly created spreadsheet's default `Sheet1` in place. The workflow adds or uses `Jobs`; it does not rewrite or delete `Sheet1`.
 
@@ -225,7 +229,7 @@ Open the node, select the same Google Sheets OAuth2 credential, and save the wor
 
 ### `Credentials not found` before the first API request
 
-Open each of the 14 credential-bearing nodes, confirm the matching credential, and save the workflow before rerunning. Existing credentials are not rejected or missing merely because an imported JSON has no credential IDs. If exactly one matching credential exists, Cloud may select it when you open the node, but it still requires confirmation for each node.
+Open each of the 15 credential-bearing nodes, confirm the matching credential, and save the workflow before rerunning. Existing credentials are not rejected or missing merely because an imported JSON has no credential IDs. If exactly one matching credential exists, Cloud may select it when you open the node, but it still requires confirmation for each node.
 
 ### Drive returns `403` or only some files
 

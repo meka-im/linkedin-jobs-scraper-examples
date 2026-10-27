@@ -1,6 +1,16 @@
 # Acceptance Notes
 
-This page records how the example was validated and how to maintain evidence for future workflow changes. The current one-command, live API, Docker lifecycle, and Cloud two-run results are in [`validation/2026-10-25/one-command-acceptance.json`](../validation/2026-10-25/one-command-acceptance.json). The earlier local n8n measurements remain in [`validation/2026-10-25/n8n-sheets-acceptance.json`](../validation/2026-10-25/n8n-sheets-acceptance.json).
+This page records how the example was validated and how to maintain evidence for future workflow changes. The latest reliability-onboarding result is in [`validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json`](../validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json). The historical CLI and API, Docker lifecycle, and Cloud two-run snapshots are indexed by [`validation/2026-10-25/one-command-acceptance.json`](../validation/2026-10-25/one-command-acceptance.json); the earlier local n8n measurements remain in [`validation/2026-10-25/n8n-sheets-acceptance.json`](../validation/2026-10-25/n8n-sheets-acceptance.json).
+
+## Reliability-Onboarding Acceptance (2026-10-27)
+
+The [sanitized acceptance record](../validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json) separates the three explicitly confirmed paid runs. The frozen predecessor fetched and appended 10 jobs in 23.138 seconds with complete coverage and zero failed counters. Independent UI comparison matched all 110 header-and-row cells, but ten repeated readback items exposed the defect fixed by `executeOnce`. That predecessor is not final-artifact acceptance.
+
+The final `executeOnce` artifact's second run completed in 17.362 seconds. It fetched and saved three jobs and invoked readback once, but seven job-detail retrievals failed upstream, so coverage was `partial`, `failureCategory` was `partial-run`, and the UI correctly stayed amber **needs attention**. That partial result remains in the evidence.
+
+The separately authorized third run supplied the complete final-artifact pass. It completed in 15.494 seconds with 10 fetched jobs, seven new and appended rows, three existing rows skipped, complete coverage, no budget stop, and zero failed searches/details/companies. Its manual guard remained 10 jobs, USD 0.05, and no company enrichment. The single readback call completed in 287 milliseconds. Independent UI comparison matched all 110 cells, found 10 unique IDs and every `firstSeenAt`, and confirmed the prior three-row snapshot's 40 cells were unchanged. The UI showed green **Test passed** only after verification, and the execution link opened the recorded execution. The 15.494-second runtime is a one-run snapshot, not a performance promise.
+
+The 2026-10-27 offline suite passed **141 Node.js tests and 4 Python tests**. These offline checks are separate from the three explicitly authorized live Actor and Google Sheets runs.
 
 ## Historical Release Check Snapshot (2026-10-25)
 
@@ -8,7 +18,7 @@ On 2026-10-25, the fixed Node.js 22 suite passed **70 Node.js tests and 4 Python
 
 On n8n Cloud 2.45.3 Experimental, two Manual Trigger executions also completed with the schedule inactive and Execution Logic set to `v1` (recommended). Both runs used the unchanged public workflow, completed with `coverage: "complete"`, reported zero failed searches, failed job details, and failed companies, and did not stop by budget. The real sheet moved from 0 to 10 to 11 rows, with 11 unique IDs and no duplicates. The two Manual Trigger runs used the instance's default timezone; after those runs, the private workflow's Settings timezone was explicitly changed to `Etc/UTC`, saved, reopened, and confirmed while the schedule remained inactive. See [the current acceptance measurements](../validation/2026-10-25/one-command-acceptance.json).
 
-The current branch's offline suite passed **70 Node.js tests and 4 Python tests (74 total)** under Node.js `v22.22.0`. The additional four Node.js tests verify the template submission variant's title and sticky copy, executable graph, reproducible build, and absence of embedded private data. This test update does not create another live Actor, n8n Cloud, or Google Sheets execution.
+At that snapshot, the offline suite passed **70 Node.js tests and 4 Python tests (74 total)** under Node.js `v22.22.0`. The additional four Node.js tests verify the template submission variant's title and sticky copy, executable graph, reproducible build, and absence of embedded private data. This test update did not create another live Actor, n8n Cloud, or Google Sheets execution.
 
 ## Historical Local n8n Snapshot
 

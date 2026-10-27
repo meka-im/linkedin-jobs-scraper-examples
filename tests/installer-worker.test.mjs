@@ -179,7 +179,7 @@ test('worker rejects arbitrary targets, unlisted tools, and spoofed routing head
   assert.equal(fetched, 0);
 });
 
-test('worker forwards only the five-tool MCP envelope to the fixed workspace path', async () => {
+test('worker forwards only the reviewed MCP envelope to the fixed workspace path', async () => {
   let upstream;
   const upstreamResponse = jsonRpc({ data: [] }, 200, {
     'Set-Cookie': 'must-not-forward=true',
@@ -189,7 +189,10 @@ test('worker forwards only the five-tool MCP envelope to the fixed workspace pat
     jsonrpc: '2.0',
     id: 7,
     method: 'tools/call',
-    params: { name: 'list_credentials', arguments: { type: 'apifyOAuth2Api' } },
+    params: {
+      name: 'list_credentials',
+      arguments: { type: 'apifyOAuth2Api', limit: 200 },
+    },
   };
   const request = relayRequest(body, {
     headers: relayHeaders({

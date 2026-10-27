@@ -108,6 +108,20 @@
             </label>
           </div>
           <div id="credential-help" class="credential-help"></div>
+          <div class="connection-check">
+            <button id="connection-check-button" class="button primary" type="button">
+              Check both connections
+            </button>
+            <div id="connection-status" class="connection-status" aria-live="polite">
+              Apify: not checked. Google read access: not checked.
+            </div>
+            <p class="fine-print">
+              This explicit check creates or reuses one inactive helper workflow. It calls the fixed
+              Apify account endpoint and performs a one-file Google Drive read. It does not start an
+              Actor or prove that the target sheet can be written. Reconnect a credential and run the
+              check again if either result fails.
+            </p>
+          </div>
         </div>
 
         <form id="install-form" class="stack">
@@ -169,12 +183,13 @@
 
           <div class="install-note">
             <strong>What the installer will do</strong>
-            <span>Create one inactive workflow and verify its graph. It will not run the Actor, start a paid request, or publish the schedule.</span>
+            <span>Create one inactive workflow and verify its graph only after both account checks pass. It does not run the Actor, enable the schedule, or claim a successful sheet write.</span>
           </div>
           <p class="fine-print">
-            n8n's consent grants workflow read/write and credential read so this page can validate,
-            create, and read back this workflow. The installer does not call execute, publish,
-            archive, or delete tools.
+            n8n consent grants workflow read/write/execute, credential read, and execution read.
+            These scopes are broader than this product flow. The relay accepts only the reviewed
+            workflow builders plus explicit Manual Trigger execution and sanitized execution reads;
+            it does not expose publish, update, archive, activate, or automatic scheduling tools.
           </p>
           <button id="install-button" class="button primary large" type="submit">
             Install inactive workflow
@@ -206,31 +221,52 @@
       </section>
 
       <section id="success-panel" class="panel success-panel" hidden>
-        <div class="success-mark" aria-hidden="true">✓</div>
-        <p class="eyebrow">Installation verified</p>
+        <div id="success-mark" class="success-mark" aria-hidden="true">!</div>
+        <p id="success-eyebrow" class="eyebrow">Installed · Test required</p>
         <h2 id="success-title"></h2>
         <p id="success-message"></p>
         <dl class="facts">
-          <div><dt>Nodes</dt><dd>41</dd></div>
-          <div><dt>Connections</dt><dd>39</dd></div>
+          <div><dt>Nodes</dt><dd>42</dd></div>
+          <div><dt>Connections</dt><dd>40</dd></div>
           <div><dt>Schedule</dt><dd>Inactive</dd></div>
           <div><dt>Timezone</dt><dd>UTC</dd></div>
         </dl>
+        <div class="test-status-card">
+          <strong>Evidence snapshot</strong>
+          <p id="test-status"></p>
+        </div>
         <p class="fine-print">
-          n8n validated all 14 credential references before creation. Its read-only workflow response
-          intentionally omits credential IDs, so the final graph check does not expose them.
-          n8n also exposes this created copy to MCP with <code>availableInMCP=true</code>; the
-          installer does not enumerate unrelated workflows.
+          The installer submitted 15 credential references. If n8n exposes only part of that
+          reference graph, the result stays “Test required”; it does not claim the references were
+          visibly revalidated.
         </p>
         <a id="open-workflow" class="button primary large" href="#" target="_blank" rel="noopener noreferrer">
           Open in n8n
         </a>
+        <a id="test-execution" class="button quiet" href="#" target="_blank" rel="noopener noreferrer" hidden>
+          Open recorded execution
+        </a>
+        <div id="test-consent-row" class="test-consent-row">
+          <label class="check-row">
+            <input id="test-consent" type="checkbox">
+            I confirm this manual test may call Apify and cost up to $0.05.
+          </label>
+          <p class="fine-print">
+            A manual run is capped to 10 jobs, a positive Apify budget no higher than $0.05, and no
+            company enrichment. It may create or reuse the workflow’s own Google spreadsheet and
+            append only new rows. The schedule remains off. Google account checking is read-only;
+            sheet write access is proven only when this test produces a verified row readback.
+          </p>
+        </div>
+        <button id="test-button" class="button primary large" type="button">
+          Run a small test
+        </button>
         <div class="next-steps">
-          <h3>Before the first manual run</h3>
+          <h3>After the test</h3>
           <ol>
-            <li>Review the workflow timezone and what 08:00 means for your schedule.</li>
-            <li>Confirm both OAuth credentials allow HTTP requests only to the required domains.</li>
-            <li>Run the Manual Trigger and inspect the created spreadsheet. Publish only after that test.</li>
+            <li>Open the workflow and review the created spreadsheet plus the latest execution.</li>
+            <li>Treat zero new rows, partial coverage, budget stops, or failed readback as unverified.</li>
+            <li>Only after a green “Test passed” result, review and enable the schedule yourself in n8n.</li>
           </ol>
         </div>
       </section>

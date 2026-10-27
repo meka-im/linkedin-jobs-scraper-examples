@@ -372,6 +372,28 @@ select:focus {
   display: none;
 }
 
+.connection-check {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 18px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.connection-status {
+  display: grid;
+  gap: 7px;
+  color: #445a75;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.connection-status p {
+  margin: 0;
+}
+
 .section-title {
   margin-top: 20px;
 }
@@ -455,7 +477,10 @@ select:focus {
 
 .success-panel {
   text-align: center;
-  border-color: #b8e2d2;
+  background:
+    linear-gradient(rgb(255 255 255 / 97%), rgb(255 255 255 / 97%)),
+    #f59e0b;
+  border-color: #f2c66d;
 }
 
 .success-mark {
@@ -465,9 +490,31 @@ select:focus {
   height: 64px;
   margin: 0 auto 18px;
   color: white;
-  background: var(--success);
+  background: #c47a00;
   border-radius: 50%;
   font-size: 2rem;
+}
+
+.success-panel.passed {
+  background:
+    linear-gradient(rgb(255 255 255 / 97%), rgb(255 255 255 / 97%)),
+    var(--success);
+  border-color: #b8e2d2;
+}
+
+.success-panel.passed .success-mark {
+  background: var(--success);
+}
+
+.success-panel.failed {
+  background:
+    linear-gradient(rgb(255 255 255 / 97%), rgb(255 255 255 / 97%)),
+    var(--danger);
+  border-color: #f1b8b3;
+}
+
+.success-panel.failed .success-mark {
+  background: var(--danger);
 }
 
 .success-panel > p:not(.eyebrow, .fine-print) {
@@ -482,17 +529,25 @@ select:focus {
   grid-template-columns: repeat(4, 1fr);
   margin: 28px 0;
   padding: 18px;
-  background: #f5faf8;
+  background: #fff9ed;
   border-radius: 14px;
 }
 
 .facts div {
   padding: 8px;
-  border-right: 1px solid #d8ebe3;
+  border-right: 1px solid #f1dfbd;
 }
 
 .facts div:last-child {
   border: 0;
+}
+
+.passed .facts {
+  background: #f5faf8;
+}
+
+.passed .facts div {
+  border-color: #d8ebe3;
 }
 
 .facts dt {
@@ -509,6 +564,44 @@ select:focus {
 
 .success-panel .button {
   margin: 20px auto 0;
+}
+
+.test-status-card {
+  max-width: 720px;
+  margin: 0 auto 20px;
+  padding: 16px 18px;
+  text-align: left;
+  background: #fff9ed;
+  border: 1px solid #f1dfbd;
+  border-radius: 13px;
+}
+
+.test-status-card p {
+  margin: 6px 0 0;
+  color: #66512d;
+  line-height: 1.5;
+}
+
+.test-consent-row {
+  max-width: 720px;
+  margin: 22px auto 4px;
+  padding: 18px;
+  text-align: left;
+  background: #fbfcff;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+}
+
+.test-consent-row[hidden] {
+  display: none;
+}
+
+.test-consent-row .check-row {
+  align-items: flex-start;
+}
+
+.test-consent-row .fine-print {
+  margin-top: 10px;
 }
 
 .next-steps {

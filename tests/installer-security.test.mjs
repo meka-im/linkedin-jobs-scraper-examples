@@ -15,6 +15,8 @@ import {
   validateMcpRpcBody,
   validateRelayTarget,
 } from '../installer/lib/relay-policy.js';
+import { RELAY_ALLOWED_NODE_SETS } from '../installer/lib/relay-request-policy.js';
+import { sanitizeMcpResponseBody } from '../installer/lib/relay-response-policy.js';
 import {
   assertSameOriginUrl,
   parseWorkspaceUrl,
@@ -297,6 +299,77 @@ test('redirect URI and relay policy allow only exact manual execution reads', ()
     },
   });
 
+  assert.deepEqual(RELAY_ALLOWED_NODE_SETS.apifyConnectionCheck, [
+    'Manual Trigger',
+    'Check Apify OAuth',
+    'Assess Apify Connection',
+    'Connection Check Summary',
+  ]);
+  assert.deepEqual(RELAY_ALLOWED_NODE_SETS.googleConnectionCheck, [
+    'Manual Trigger',
+    'Check Google OAuth',
+    'Assess Google Connection',
+    'Connection Check Summary',
+  ]);
+  for (const nodeNames of Object.values(RELAY_ALLOWED_NODE_SETS)) {
+    assert.deepEqual(validateMcpRpcBody(toolCall('get_workflow_execution', {
+      workflowId: 'workflow-123',
+      executionId: 'execution-123',
+      includeData: true,
+      nodeNames: [...nodeNames],
+      truncateData: 1,
+    })), {
+      method: 'tools/call',
+      toolName: 'get_workflow_execution',
+      toolArguments: {
+        workflowId: 'workflow-123',
+        executionId: 'execution-123',
+        includeData: true,
+        nodeNames: [...nodeNames],
+        truncateData: 1,
+      },
+    });
+  }
+
+  for (const code of [
+    '// MEKA account check · legacy',
+    '// MEKA Apify account check · new',
+    '// MEKA Google account check · new',
+  ]) {
+    assert.equal(
+      validateMcpRpcBody(toolCall('validate_workflow', { code })).toolArguments.code,
+      code,
+    );
+  }
+  for (const code of [
+    '// MEKA Enterprise account check · new',
+    '// MEKA Apify Account check · new',
+    '// MEKA Google account checks · new',
+  ]) {
+    assert.throws(
+      () => validateMcpRpcBody(toolCall('validate_workflow', { code })),
+      { code: 'RELAY_ARGUMENTS_REFUSED' },
+    );
+  }
+
+  const apifyNodes = RELAY_ALLOWED_NODE_SETS.apifyConnectionCheck;
+  for (const nodeNames of [
+    [...apifyNodes, 'Unexpected Node'],
+    apifyNodes.filter((name) => name !== 'Check Apify OAuth'),
+    [...apifyNodes, 'Connection Check Summary'],
+    apifyNodes.map((name) => (
+      name === 'Assess Apify Connection' ? 'Assess Apify Credential' : name
+    )),
+  ]) {
+    assert.throws(() => validateMcpRpcBody(toolCall('get_workflow_execution', {
+      workflowId: 'workflow-123',
+      executionId: 'execution-123',
+      includeData: true,
+      nodeNames,
+      truncateData: 1,
+    })), { code: 'RELAY_ARGUMENTS_REFUSED' });
+  }
+
   for (const body of [
     toolCall('execute_workflow', {
       workflowId: 'workflow-123',
@@ -353,4 +426,124 @@ test('redirect URI and relay policy allow only exact manual execution reads', ()
   assert.equal(isPrivateAddress('ff02::1'), true);
   assert.equal(isPrivateAddress('not-an-ip'), true);
   assert.equal(isPrivateAddress('203.0.114.8'), false);
+});
+
+test('single-service execution responses expose only the safe connection summary', () => {
+  const cases = [
+    {
+      set: RELAY_ALLOWED_NODE_SETS.apifyConnectionCheck,
+      workflowId: 'workflow-apify',
+      executionId: 'execution-apify',
+      serviceField: 'apifyStatus',
+      droppedServiceField: 'googleStatus',
+      checkNode: 'Check Apify OAuth',
+    },
+    {
+      set: RELAY_ALLOWED_NODE_SETS.googleConnectionCheck,
+      workflowId: 'workflow-google',
+      executionId: 'execution-google',
+      serviceField: 'googleStatus',
+      droppedServiceField: 'apifyStatus',
+      checkNode: 'Check Google OAuth',
+    },
+  ];
+
+  for (const scenario of cases) {
+    const args = {
+      workflowId: scenario.workflowId,
+      executionId: scenario.executionId,
+      includeData: true,
+      nodeNames: [...scenario.set],
+      truncateData: 1,
+    };
+    const leakedValues = [
+      'CHECK_NODE_RAW_RESPONSE_SHOULD_NOT_LEAK',
+      'Bearer upstream-access-token-should-not-leak',
+      'credential-secret-should-not-leak',
+      'environment-secret-should-not-leak',
+      'summary-extra-field-should-not-leak',
+    ];
+    const body = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 11,
+      result: {
+        structuredContent: {
+          execution: {
+            id: scenario.executionId,
+            workflowId: scenario.workflowId,
+            status: 'success',
+          },
+          data: {
+            resultData: {
+              runData: {
+                [scenario.checkNode]: [{
+                  data: {
+                    main: [[{
+                      json: {
+                        response: leakedValues[0],
+                        headers: {
+                          authorization: leakedValues[1],
+                        },
+                        credentialId: leakedValues[2],
+                        environment: leakedValues[3],
+                      },
+                    }]],
+                  },
+                }],
+                'Connection Check Summary': [{
+                  data: {
+                    main: [[{
+                      json: {
+                        status: 'ok',
+                        workflowId: scenario.workflowId,
+                        executionId: scenario.executionId,
+                        [scenario.serviceField]: 'ok',
+                        [scenario.droppedServiceField]: null,
+                        rawResponse: leakedValues[0],
+                        authorization: leakedValues[1],
+                        credential: leakedValues[2],
+                        environment: leakedValues[3],
+                        evidence: leakedValues[4],
+                      },
+                    }]],
+                  },
+                }],
+              },
+            },
+          },
+        },
+      },
+    });
+    const sanitized = new TextDecoder().decode(sanitizeMcpResponseBody({
+      toolName: 'get_workflow_execution',
+      arguments: args,
+      contentType: 'application/json',
+      body: new TextEncoder().encode(body),
+    }));
+    const sanitizedBody = JSON.parse(sanitized);
+    const value = sanitizedBody.result.structuredContent;
+
+    assert.deepEqual(value, {
+      execution: {
+        id: scenario.executionId,
+        workflowId: scenario.workflowId,
+        status: 'success',
+      },
+      summary: {
+        status: 'ok',
+        [scenario.serviceField]: 'ok',
+        workflowId: scenario.workflowId,
+        executionId: scenario.executionId,
+      },
+      hasPinnedServiceData: 'unknown',
+      responsePolicy: 'execution-response-v1',
+    });
+    assert.equal(
+      Object.hasOwn(value.summary, scenario.droppedServiceField),
+      false,
+    );
+    for (const leaked of leakedValues) {
+      assert.doesNotMatch(sanitized, new RegExp(leaked, 'u'));
+    }
+  }
 });

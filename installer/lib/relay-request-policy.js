@@ -20,6 +20,18 @@ export const RELAY_ALLOWED_NODE_SETS = Object.freeze({
     'Assess Google Connection',
     'Connection Check Summary',
   ]),
+  apifyConnectionCheck: Object.freeze([
+    'Manual Trigger',
+    'Check Apify OAuth',
+    'Assess Apify Connection',
+    'Connection Check Summary',
+  ]),
+  googleConnectionCheck: Object.freeze([
+    'Manual Trigger',
+    'Check Google OAuth',
+    'Assess Google Connection',
+    'Connection Check Summary',
+  ]),
   mainWorkflow: Object.freeze([
     'Manual Trigger',
     'Daily Schedule',
@@ -145,6 +157,8 @@ function reviewableWorkflowCode(value) {
   if (
     !code.includes('LinkedIn jobs to Google Sheets (Cloud auto-setup)')
     && !code.includes('MEKA account check · ')
+    && !code.includes('MEKA Apify account check · ')
+    && !code.includes('MEKA Google account check · ')
   ) {
     throw new InstallerError(
       'RELAY_ARGUMENTS_REFUSED',

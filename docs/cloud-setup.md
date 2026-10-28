@@ -13,7 +13,7 @@ Set the credentials' **Allowed HTTP Request Domains** to **Specific Domains**:
 
 The n8n OAuth token is used with `workflow:read`, `workflow:write`, `credential:read`, `workflow:execute`, and `execution:read`. The last two are needed for the explicit account check and user-confirmed small test; n8n grants them across the selected workspace, while the product limits calls to reviewed inactive workflows, the Manual Trigger, bounded arguments, and sanitized execution summaries. During installation its MCP requests pass transiently through the MEKA n8n hub relay at `meka.im`; MEKA does not store the token. Apify and Google secrets stay in the user's n8n credentials.
 
-The hosted installer creates the workflow inactive and shows **Installed · Test required**. It does not execute unless the user later ticks the bounded-test confirmation. Every Manual Trigger run is limited to 10 fetched jobs, a positive budget no greater than USD 0.05, and no company enrichment. Green **Test passed** requires a linked terminal execution, exact pin evidence, unchanged inactive workflow version, and independent Sheet readback. The saved schedule keeps the user's requested limit and budget and remains inactive until the user enables it.
+The hosted installer creates the workflow inactive and shows **Installed · Test required**. It does not execute unless the user later ticks the bounded-test confirmation. Every Manual Trigger run is limited to 10 fetched jobs, a positive budget no greater than USD 1, and no company enrichment. The default USD 1 setting is a maximum, not a fixed charge; actual usage may be lower. Green **Test passed** requires a linked terminal execution, exact pin evidence, unchanged inactive workflow version, and independent Sheet readback. The saved schedule keeps the user's requested limit and budget and remains inactive until the user enables it.
 
 The historical imported artifact, SHA-256 `fcdb945365562ec97243d353b344ecc67b1a9738c310d15cfe18f130122dd85b`, was accepted on n8n Cloud **2.45.3 Experimental** with the official verified `@apify/n8n-nodes-apify` **0.8.1** package. It predates the current 42-node readback flow. The [historical sanitized acceptance evidence](../validation/2026-10-25/cloud-auto-setup-acceptance.json) remains tied to that artifact.
 
@@ -25,7 +25,7 @@ The separate n8n Creator template submission is still pending. It is not require
 
 1. Import [`linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json) as a new inactive workflow and save it.
 2. Create or choose the managed **Apify OAuth2** and **Google Sheets OAuth2** credentials. Set the exact HTTP domains described below, then open all 15 credential-bearing nodes, confirm the matching credential, and save.
-3. Set `keywords` and `location`, review the advanced schedule settings and spending cap, save, and run the **Manual Trigger**. That manual run is clamped to 10 fetched jobs, a positive budget no greater than USD 0.05, and no company enrichment. It creates or reuses the tagged spreadsheet and exact `Jobs` header before starting the Actor.
+3. Set `keywords` and `location`, review the advanced schedule settings and spending cap, save, and run the **Manual Trigger**. That manual run is clamped to 10 fetched jobs, a positive budget no greater than USD 1, and no company enrichment. It creates or reuses the tagged spreadsheet and exact `Jobs` header before starting the Actor.
 
 The JSON import does not bind credentials, and Cloud may report `Credentials not found` until the 15-node confirmation pass is saved. This limitation applies to the manual fallback; the hosted installer validates and submits the explicit bindings as part of its installation flow.
 
@@ -137,7 +137,7 @@ The exported starting values are:
 | `location` | `London, United Kingdom` | Search market. |
 | `datePosted` | `pastWeek` | Actor date window. Advanced setting. |
 | `limit` | `10` | Result cap and expected maximum Dataset size. Advanced setting. |
-| `budgetUsd` | `0.05` | Actor maximum charge cap. Advanced setting. |
+| `budgetUsd` | `1` | Actor maximum charge cap. Advanced setting. |
 | `scrapeCompany` | `false` | Optional company enrichment. Advanced setting. |
 | `spreadsheetTitle` | `LinkedIn jobs` | Title used only when creating a new spreadsheet. Optional. |
 
@@ -146,7 +146,7 @@ There is no `sheetId` field. The workflow resolves the spreadsheet from its Driv
 ## 5. Run the first test
 
 1. Save the workflow and all credential selections.
-2. Run the **Manual Trigger** once. The manual guard clamps this run to 10 fetched jobs, a budget no greater than USD 0.05, and no company enrichment.
+2. Run the **Manual Trigger** once. The manual guard clamps this run to 10 fetched jobs, a budget no greater than USD 1, and no company enrichment.
 3. Follow the execution through bootstrap, `Input Validation`, the Actor run, sheet read, ID filtering, append, `Read Written Jobs`, and `Run Summary`.
 4. Open the generated spreadsheet and confirm that a `Jobs` worksheet contains row 1 with:
 

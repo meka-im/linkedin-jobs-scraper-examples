@@ -120,7 +120,7 @@ const cloudSettingsInput = {
   location: 'London, United Kingdom',
   datePosted: 'pastWeek',
   limit: 10,
-  budgetUsd: 0.05,
+  budgetUsd: 1,
   scrapeCompany: false,
   spreadsheetTitle: 'LinkedIn jobs',
 };
@@ -181,7 +181,7 @@ function settings() {
     location: 'London, United Kingdom',
     datePosted: 'pastWeek',
     limit: 10,
-    budgetUsd: 0.05,
+    budgetUsd: 1,
     scrapeCompany: false,
     spreadsheetTitle: 'LinkedIn jobs',
     workflowId,
@@ -217,7 +217,7 @@ test('Cloud search settings expose only the intended fields with limit 10 and no
     location: 'London, United Kingdom',
     datePosted: 'pastWeek',
     limit: 10,
-    budgetUsd: 0.05,
+    budgetUsd: 1,
     scrapeCompany: false,
     spreadsheetTitle: 'LinkedIn jobs',
   });
@@ -412,11 +412,17 @@ test('manual test mode is clamped while production keeps the requested schedule 
   assert.equal(testSettings.executionMode, 'test');
   assert.equal(testSettings.manualRun, true);
   assert.equal(testSettings.limit, 10);
-  assert.equal(testSettings.budgetUsd, 0.05);
+  assert.equal(testSettings.budgetUsd, 1);
   assert.equal(testSettings.scrapeCompany, false);
   assert.equal(testSettings.requestedLimit, 1000);
   assert.equal(testSettings.requestedBudgetUsd, 20);
   assert.equal(testSettings.requestedScrapeCompany, true);
+
+  const lowerBudgetSettings = await validatedSettings(
+    { ...requested, budgetUsd: 0.25 },
+    { mode: 'test' },
+  );
+  assert.equal(lowerBudgetSettings.budgetUsd, 0.25);
 
   const productionSettings = await validatedSettings(requested, {
     mode: 'production',
@@ -458,7 +464,7 @@ test('Input Validation preserves the final manual-run guard for Run Summary', as
   assert.equal(validated.json.executionMode, 'test');
   assert.equal(validated.json.manualRun, true);
   assert.equal(validated.json.limit, 10);
-  assert.equal(validated.json.budgetUsd, 0.05);
+  assert.equal(validated.json.budgetUsd, 1);
   assert.equal(validated.json.scrapeCompany, false);
   assert.equal(validated.json.workflowId, workflowId);
   assert.equal(validated.json.sheetId, 'sheet_123');
@@ -469,11 +475,11 @@ test('Input Validation preserves the final manual-run guard for Run Summary', as
     executeCloudCode(codeNode('Input Validation'), {
       input: [{
         ...validated.json,
-        budgetUsd: 0.06,
+        budgetUsd: 1.01,
       }],
       execution: { id: 'execution_123', mode: 'test' },
     }),
-    /10-job, \$0\.05/u,
+    /10-job, \$1/u,
   );
   await assert.rejects(
     executeCloudCode(codeNode('Input Validation'), {
@@ -991,7 +997,7 @@ test('manual Run Summary requires independent sheet readback and rejects incompl
   assert.equal(passed.uniqueIds, true);
   assert.equal(passed.executionMode, 'test');
   assert.equal(passed.manualLimit, 10);
-  assert.equal(passed.manualBudgetUsd, 0.05);
+  assert.equal(passed.manualBudgetUsd, 1);
 
   const wrongTitleRows = [
     expectedHeader,

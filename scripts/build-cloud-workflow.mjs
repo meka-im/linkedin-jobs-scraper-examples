@@ -164,7 +164,7 @@ function addPrimarySettings(workflow) {
       {
         id: 'ad409653-f9ab-44db-b786-b0e0b55a21fb',
         name: 'budgetUsd',
-        value: 0.05,
+        value: 1,
         type: 'number',
       },
       {

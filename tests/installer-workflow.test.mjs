@@ -157,7 +157,7 @@ test('protected Cloud artifact and original Header Auth fingerprints stay unchan
   const header = await readFile(path.join(root, 'n8n', 'linkedin-jobs-to-google-sheets.json'));
   assert.equal(
     createHash('sha256').update(cloud).digest('hex'),
-    '26647c7e5742287cc2e797351334f3e09689707b552d3d5fb6142a9a876f5241',
+    '1dfd39a547a6690ed70ebed309e3d21843332eca773335cc527e90ce0030cd6c',
   );
   assert.equal(
     createHash('sha256').update(header).digest('hex'),
@@ -209,6 +209,15 @@ test('runtime injection escapes user input and preserves all explicit bindings',
     apifyCredential: { ...apify, id: "../../bad" },
     googleCredential: google,
   }), { code: 'CREDENTIAL_INVALID' });
+});
+
+test('installer settings default the budget to 1 and preserve an explicit lower cap', () => {
+  const { budgetUsd: _budgetUsd, ...withoutBudget } = settings;
+  assert.equal(validateInstallerSettings(withoutBudget).budgetUsd, 1);
+  assert.equal(
+    validateInstallerSettings({ ...withoutBudget, budgetUsd: 0.05 }).budgetUsd,
+    0.05,
+  );
 });
 
 test('successful install validates first, creates once, and verifies graph without credential readback', async () => {

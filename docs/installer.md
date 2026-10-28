@@ -112,7 +112,8 @@ schedule-activation, or a generic workflow-update tool. It never executes
 automatically and never retries an ambiguous paid execution.
 
 Every Manual Trigger run in the Cloud workflow is limited to 10 fetched jobs, a
-positive USD budget no greater than 0.05, and `scrapeCompany=false`. The saved
+positive USD budget no greater than 1, and `scrapeCompany=false`. The USD 1
+setting is a maximum, not a fixed charge. The saved
 schedule retains the user's requested limit and budget for a later activation
 the user performs personally. n8n Code nodes use `$execution.mode` values
 `test` for manual runs and `production` for scheduled runs; a missing or

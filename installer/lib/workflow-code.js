@@ -63,7 +63,7 @@ export function validateInstallerSettings(input = {}) {
     );
   }
 
-  const budgetUsd = Number(input.budgetUsd ?? 0.05);
+  const budgetUsd = Number(input.budgetUsd ?? 1);
   if (!Number.isFinite(budgetUsd) || budgetUsd <= 0) {
     throw new InstallerError('SEARCH_SETTINGS_INVALID', 'budgetUsd must be greater than zero.');
   }

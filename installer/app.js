@@ -881,7 +881,7 @@ elements.testButton.addEventListener('click', async () => {
   if (!resume && !elements.testConsent.checked) {
     showStatus(
       'Confirm the bounded test',
-      'Tick the confirmation before starting a manual run that may call Apify and cost up to $0.05.',
+      'Tick the confirmation before starting a manual run that may call Apify and cost up to $1. This is a cap, not a fixed charge.',
       { error: true },
     );
     return;

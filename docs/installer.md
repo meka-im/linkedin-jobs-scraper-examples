@@ -112,10 +112,10 @@ schedule-activation, or a generic workflow-update tool. It never executes
 automatically and never retries an ambiguous paid execution.
 
 Every Manual Trigger run in the Cloud workflow is limited to 10 fetched jobs, a
-positive USD budget no greater than 1, and `scrapeCompany=false`. The USD 1
-setting is a maximum, not a fixed charge. The saved
-schedule retains the user's requested limit and budget for a later activation
-the user performs personally. n8n Code nodes use `$execution.mode` values
+positive USD budget no greater than 0.05, and `scrapeCompany=false`. The USD
+0.05 setting is a maximum, not a fixed charge. The saved schedule retains the
+user's requested limit and budget for a later activation; scheduled runs default
+to USD 1. n8n Code nodes use `$execution.mode` values
 `test` for manual runs and `production` for scheduled runs; a missing or
 unknown mode fails closed or receives the conservative manual clamp.
 
@@ -372,7 +372,7 @@ The fixed source is
 [`n8n/linkedin-jobs-cloud.json`](../n8n/linkedin-jobs-cloud.json), SHA-256:
 
 ```text
-26647c7e5742287cc2e797351334f3e09689707b552d3d5fb6142a9a876f5241
+5d7c37f874e42476b224b2261e372952366f785c65af76d8994b71b66a0828c9
 ```
 
 The build script uses `@n8n/workflow-sdk` 0.37.2 to generate a fixed SDK

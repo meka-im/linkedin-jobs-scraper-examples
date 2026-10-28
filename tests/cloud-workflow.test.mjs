@@ -412,17 +412,17 @@ test('manual test mode is clamped while production keeps the requested schedule 
   assert.equal(testSettings.executionMode, 'test');
   assert.equal(testSettings.manualRun, true);
   assert.equal(testSettings.limit, 10);
-  assert.equal(testSettings.budgetUsd, 1);
+  assert.equal(testSettings.budgetUsd, 0.05);
   assert.equal(testSettings.scrapeCompany, false);
   assert.equal(testSettings.requestedLimit, 1000);
   assert.equal(testSettings.requestedBudgetUsd, 20);
   assert.equal(testSettings.requestedScrapeCompany, true);
 
   const lowerBudgetSettings = await validatedSettings(
-    { ...requested, budgetUsd: 0.25 },
+    { ...requested, budgetUsd: 0.04 },
     { mode: 'test' },
   );
-  assert.equal(lowerBudgetSettings.budgetUsd, 0.25);
+  assert.equal(lowerBudgetSettings.budgetUsd, 0.04);
 
   const productionSettings = await validatedSettings(requested, {
     mode: 'production',
@@ -464,7 +464,7 @@ test('Input Validation preserves the final manual-run guard for Run Summary', as
   assert.equal(validated.json.executionMode, 'test');
   assert.equal(validated.json.manualRun, true);
   assert.equal(validated.json.limit, 10);
-  assert.equal(validated.json.budgetUsd, 1);
+  assert.equal(validated.json.budgetUsd, 0.05);
   assert.equal(validated.json.scrapeCompany, false);
   assert.equal(validated.json.workflowId, workflowId);
   assert.equal(validated.json.sheetId, 'sheet_123');
@@ -475,11 +475,11 @@ test('Input Validation preserves the final manual-run guard for Run Summary', as
     executeCloudCode(codeNode('Input Validation'), {
       input: [{
         ...validated.json,
-        budgetUsd: 1.01,
+        budgetUsd: 0.0501,
       }],
       execution: { id: 'execution_123', mode: 'test' },
     }),
-    /10-job, \$1/u,
+    /10-job, \$0\.05/u,
   );
   await assert.rejects(
     executeCloudCode(codeNode('Input Validation'), {
@@ -997,7 +997,14 @@ test('manual Run Summary requires independent sheet readback and rejects incompl
   assert.equal(passed.uniqueIds, true);
   assert.equal(passed.executionMode, 'test');
   assert.equal(passed.manualLimit, 10);
-  assert.equal(passed.manualBudgetUsd, 1);
+  assert.equal(passed.manualBudgetUsd, 0.05);
+
+  const overBudget = await assess({
+    configValue: { ...config, budgetUsd: 0.0501 },
+  });
+  assert.equal(overBudget.status, 'invalid-summary');
+  assert.equal(overBudget.testPassed, false);
+  assert.equal(overBudget.failureCategory, 'invalid-manual-settings');
 
   const wrongTitleRows = [
     expectedHeader,

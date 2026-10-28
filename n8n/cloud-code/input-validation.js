@@ -46,11 +46,11 @@ if (
   manualRun
   && (
     limit > 10
-    || budgetUsd > 1
+    || budgetUsd > 0.05
     || config.scrapeCompany !== false
   )
 ) {
-  throw new Error('Manual tests must stay within the reviewed 10-job, $1, no-enrichment limit');
+  throw new Error('Manual tests must stay within the reviewed 10-job, $0.05, no-enrichment limit');
 }
 if (
   !Number.isInteger(config.requestedLimit)

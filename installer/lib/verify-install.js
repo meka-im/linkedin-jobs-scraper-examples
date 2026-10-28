@@ -97,6 +97,20 @@ function expectedCredentialTypes() {
   ]);
 }
 
+function rejectLegacyManualBudgetTemplate(expected, actual) {
+  if (expected.name !== 'Validate Cloud Settings') return;
+  const actualCode = actual?.parameters?.jsCode;
+  if (
+    typeof actualCode === 'string'
+    && /Math\.min\s*\(\s*budgetUsd\s*,\s*1\s*\)/u.test(actualCode)
+  ) {
+    throw new InstallerError(
+      'LEGACY_MANUAL_BUDGET_TEMPLATE',
+      'This workflow uses an older $1 manual-test template. Reinstall the latest $0.05 template before running it; MEKA will not update the existing workflow.',
+    );
+  }
+}
+
 function credentialReadback(actualNodes, apifyCredentialId, googleCredentialId) {
   if (
     typeof apifyCredentialId !== 'string'
@@ -244,6 +258,7 @@ export async function verifyInstalledWorkflow({
       );
     }
     if (!sameJson(actual.parameters, expectedNode.parameters)) {
+      rejectLegacyManualBudgetTemplate(expectedNode, actual);
       throw new InstallerError(
         'WORKFLOW_PARAMETERS_MISMATCH',
         `Node “${expectedNode.name}” parameters did not survive creation.`,

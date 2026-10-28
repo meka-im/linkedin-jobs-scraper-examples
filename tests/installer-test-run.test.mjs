@@ -204,16 +204,11 @@ test('strict summary assessment rejects over-limit, incomplete, and inconsistent
     outcome: 'passed',
     failureCategory: null,
   });
-  assert.deepEqual(assessTestSummary(passingSummary({ manualBudgetUsd: 1 }), testRun), {
-    outcome: 'passed',
-    failureCategory: null,
-  });
-
   const failures = [
     [passingSummary({ fetchedCount: 11, newCount: 11, skippedExisting: 0 }), 'manual-guard-invalid'],
     [passingSummary({ fetchedCount: 3, newCount: 1, skippedExisting: 2 }), 'manual-guard-invalid'],
     [passingSummary({ manualLimit: 11 }), 'manual-guard-invalid'],
-    [passingSummary({ manualBudgetUsd: 1.01 }), 'manual-guard-invalid'],
+    [passingSummary({ manualBudgetUsd: 0.0501 }), 'manual-guard-invalid'],
     [passingSummary({ readbackVerified: undefined }), 'invalid-test-summary'],
     [passingSummary({ failedSearches: undefined }), 'invalid-test-summary'],
     [passingSummary({ coverage: 'partial' }), 'inconsistent-test-summary'],
@@ -253,6 +248,77 @@ test('strict summary assessment rejects over-limit, incomplete, and inconsistent
   );
 });
 
+test('an older $1 manual-budget template is rejected before execute', async () => {
+  const expectedCode = 'const effectiveBudgetUsd = Math.min(budgetUsd, 0.05);';
+  const legacyCode = 'const effectiveBudgetUsd = Math.min(budgetUsd, 1);';
+  const executionOptions = {
+    retryOnFail: false,
+    maxTries: null,
+    waitBetweenTries: null,
+    alwaysOutputData: false,
+    continueOnFail: false,
+    onError: 'stopWorkflow',
+    executeOnce: false,
+    disabled: false,
+  };
+  const legacyManifest = {
+    nodeCount: 1,
+    connectionCount: 0,
+    nodes: [{
+      name: 'Validate Cloud Settings',
+      type: 'n8n-nodes-base.code',
+      typeVersion: 2,
+      parameters: {
+        mode: 'runOnceForAllItems',
+        jsCode: expectedCode,
+      },
+      executionOptions,
+    }],
+    connections: {},
+    credentialNodeCounts: {
+      apify: 0,
+      google: 0,
+    },
+  };
+  const details = workflowDetails();
+  details.workflow.nodes = [{
+    id: 'validate-node',
+    name: 'Validate Cloud Settings',
+    type: 'n8n-nodes-base.code',
+    typeVersion: 2,
+    parameters: {
+      mode: 'runOnceForAllItems',
+      jsCode: legacyCode,
+    },
+    position: [0, 0],
+  }];
+  details.workflow.connections = {};
+  const calls = [];
+  const client = {
+    async requireTools() {},
+    async callTool(name, args) {
+      calls.push({ name, args });
+      if (name === 'get_workflow_details') return details;
+      throw new Error(`unexpected tool ${name}`);
+    },
+  };
+
+  await assert.rejects(runManualSmallTest({
+    client,
+    manifest: legacyManifest,
+    state: testState(),
+    confirmed: true,
+    nonce: 'ABCD2345',
+    now: NOW,
+    maxPolls: 1,
+    pollIntervalMs: 0,
+    wait: async () => {},
+  }), { code: 'LEGACY_MANUAL_BUDGET_TEMPLATE' });
+
+  assert.deepEqual(calls.map(({ name }) => name), ['get_workflow_details']);
+  assert.equal(calls.filter(({ name }) => name === 'execute_workflow').length, 0);
+});
+
 test('manual test executes once, polls the same ID, verifies the version, and finishes readback', async () => {
   const { client, calls } = successfulClient();
   const state = testState();
@@ -276,6 +342,7 @@ test('manual test executes once, polls the same ID, verifies the version, and fi
   );
   assert.equal(result.testPassed, true);
   assert.equal(state.testRun.workflowVersionId, VERSION_ID);
+  assert.equal(state.testRun.maxBudgetUsd, 0.05);
   assert.equal(state.testRun.summary.readbackVerified, true);
   assert.equal(calls.filter(({ name }) => name === 'execute_workflow').length, 1);
   assert.equal(

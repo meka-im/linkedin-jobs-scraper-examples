@@ -366,7 +366,7 @@ export function assessTestSummary(summary, test) {
     && summary.manualLimit >= 1
     && summary.manualLimit <= 10
     && summary.manualBudgetUsd > 0
-    && summary.manualBudgetUsd <= 1
+    && summary.manualBudgetUsd <= 0.05
   );
   if (!manualGuardsValid) {
     return {
@@ -743,7 +743,7 @@ export async function runManualSmallTest({
     startedAt: new Date(now).toISOString(),
     outcome: 'execute-requested',
     maxJobs: 10,
-    maxBudgetUsd: 1,
+    maxBudgetUsd: 0.05,
     companyEnrichment: false,
     scheduleActive: false,
   };

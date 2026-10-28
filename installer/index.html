@@ -250,17 +250,19 @@
         <div id="test-consent-row" class="test-consent-row">
           <label class="check-row">
             <input id="test-consent" type="checkbox">
-            I confirm this manual test may call Apify and cost up to $1. This is a cap, not a fixed charge.
+            Allow this test to use up to $0.05 and add new jobs to my sheet.
           </label>
           <p class="fine-print">
-            A manual run is capped to 10 jobs, a positive Apify budget no higher than $1, and no
-            company enrichment. It may create or reuse the workflow’s own Google spreadsheet and
-            append only new rows. The schedule remains off. Google account checking is read-only;
-            sheet write access is proven only when this test produces a verified row readback.
+            Up to 10 jobs, with company enrichment off and only new rows appended. Schedule off.
+            Google account checking is read-only; write access is proven only by row readback.
+          </p>
+          <p class="fine-print">
+            <a href="https://apify.com/pricing" target="_blank" rel="noopener noreferrer">Apify Free</a>
+            includes $5/month in shared credits. This test uses your remaining balance.
           </p>
         </div>
         <button id="test-button" class="button primary large" type="button">
-          Run a small test
+          Run test · max $0.05
         </button>
         <div class="next-steps">
           <h3>After the test</h3>

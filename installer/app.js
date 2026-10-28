@@ -767,8 +767,8 @@ function showTestPanel(result = {}) {
   elements.testButton.textContent = resume
     ? 'Check this execution'
     : testOutcome === 'failed' || testOutcome === 'needs-attention'
-      ? 'Run another bounded test'
-      : 'Run a small test';
+      ? 'Test again · max $0.05'
+      : 'Run test · max $0.05';
   setStep('install');
   clearStatus();
   elements.successPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -881,7 +881,7 @@ elements.testButton.addEventListener('click', async () => {
   if (!resume && !elements.testConsent.checked) {
     showStatus(
       'Confirm the bounded test',
-      'Tick the confirmation before starting a manual run that may call Apify and cost up to $1. This is a cap, not a fixed charge.',
+      'Allow up to $0.05 and add new jobs to the sheet before starting this test.',
       { error: true },
     );
     return;

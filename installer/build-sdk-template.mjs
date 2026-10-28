@@ -63,7 +63,7 @@ function assignment(assignments, name) {
 const sdk = await loadSdk();
 const sourceBytes = await readFile(sourcePath);
 const sourceHash = createHash('sha256').update(sourceBytes).digest('hex');
-if (sourceHash !== '1dfd39a547a6690ed70ebed309e3d21843332eca773335cc527e90ce0030cd6c') {
+if (sourceHash !== '5d7c37f874e42476b224b2261e372952366f785c65af76d8994b71b66a0828c9') {
   throw new Error(`Unexpected Cloud workflow source hash: ${sourceHash}`);
 }
 

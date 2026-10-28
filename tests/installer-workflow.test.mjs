@@ -157,7 +157,7 @@ test('protected Cloud artifact and original Header Auth fingerprints stay unchan
   const header = await readFile(path.join(root, 'n8n', 'linkedin-jobs-to-google-sheets.json'));
   assert.equal(
     createHash('sha256').update(cloud).digest('hex'),
-    '1dfd39a547a6690ed70ebed309e3d21843332eca773335cc527e90ce0030cd6c',
+    '5d7c37f874e42476b224b2261e372952366f785c65af76d8994b71b66a0828c9',
   );
   assert.equal(
     createHash('sha256').update(header).digest('hex'),

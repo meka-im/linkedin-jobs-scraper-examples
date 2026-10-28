@@ -80,7 +80,7 @@ if (
   config.executionMode === 'test'
   && (
     config.limit > 10
-    || config.budgetUsd > 1
+    || config.budgetUsd > 0.05
     || config.scrapeCompany !== false
   )
 ) {

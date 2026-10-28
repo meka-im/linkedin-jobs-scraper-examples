@@ -158,7 +158,8 @@
               </label>
               <label>
                 Actor spending cap (USD)
-                <input id="budget" name="budgetUsd" type="number" min="0.000001" step="any" value="0.05" required>
+                <input id="budget" name="budgetUsd" type="number" min="0.000001" step="any" value="1" required>
+                <small class="field-help">This is a maximum, not a fixed charge.</small>
               </label>
               <label>
                 Spreadsheet title
@@ -249,10 +250,10 @@
         <div id="test-consent-row" class="test-consent-row">
           <label class="check-row">
             <input id="test-consent" type="checkbox">
-            I confirm this manual test may call Apify and cost up to $0.05.
+            I confirm this manual test may call Apify and cost up to $1. This is a cap, not a fixed charge.
           </label>
           <p class="fine-print">
-            A manual run is capped to 10 jobs, a positive Apify budget no higher than $0.05, and no
+            A manual run is capped to 10 jobs, a positive Apify budget no higher than $1, and no
             company enrichment. It may create or reuse the workflow’s own Google spreadsheet and
             append only new rows. The schedule remains off. Google account checking is read-only;
             sheet write access is proven only when this test produces a verified row readback.

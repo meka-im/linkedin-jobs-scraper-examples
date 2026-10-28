@@ -63,7 +63,7 @@ const effectiveLimit = manualRun
   ? Math.min(requestedLimit, 10)
   : requestedLimit;
 const effectiveBudgetUsd = manualRun
-  ? Math.min(budgetUsd, 0.05)
+  ? Math.min(budgetUsd, 1)
   : budgetUsd;
 const effectiveScrapeCompany = manualRun ? false : config.scrapeCompany;
 

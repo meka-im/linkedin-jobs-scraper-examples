@@ -204,11 +204,16 @@ test('strict summary assessment rejects over-limit, incomplete, and inconsistent
     outcome: 'passed',
     failureCategory: null,
   });
+  assert.deepEqual(assessTestSummary(passingSummary({ manualBudgetUsd: 1 }), testRun), {
+    outcome: 'passed',
+    failureCategory: null,
+  });
 
   const failures = [
     [passingSummary({ fetchedCount: 11, newCount: 11, skippedExisting: 0 }), 'manual-guard-invalid'],
     [passingSummary({ fetchedCount: 3, newCount: 1, skippedExisting: 2 }), 'manual-guard-invalid'],
     [passingSummary({ manualLimit: 11 }), 'manual-guard-invalid'],
+    [passingSummary({ manualBudgetUsd: 1.01 }), 'manual-guard-invalid'],
     [passingSummary({ readbackVerified: undefined }), 'invalid-test-summary'],
     [passingSummary({ failedSearches: undefined }), 'invalid-test-summary'],
     [passingSummary({ coverage: 'partial' }), 'inconsistent-test-summary'],

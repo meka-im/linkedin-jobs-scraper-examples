@@ -63,7 +63,7 @@ function assignment(assignments, name) {
 const sdk = await loadSdk();
 const sourceBytes = await readFile(sourcePath);
 const sourceHash = createHash('sha256').update(sourceBytes).digest('hex');
-if (sourceHash !== '26647c7e5742287cc2e797351334f3e09689707b552d3d5fb6142a9a876f5241') {
+if (sourceHash !== '1dfd39a547a6690ed70ebed309e3d21843332eca773335cc527e90ce0030cd6c') {
   throw new Error(`Unexpected Cloud workflow source hash: ${sourceHash}`);
 }
 
@@ -134,7 +134,7 @@ const sampleSettings = {
   location: 'London, United Kingdom',
   datePosted: 'pastWeek',
   limit: 10,
-  budgetUsd: 0.05,
+  budgetUsd: 1,
   scrapeCompany: false,
   spreadsheetTitle: 'LinkedIn jobs',
 };

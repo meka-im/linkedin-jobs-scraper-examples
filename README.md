@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <strong>Enable MCP, connect your accounts, choose a search, then install one inactive workflow and open it in n8n.</strong>
+  <strong>10-job test &middot; up to $0.05 &middot; schedule off</strong>
 </p>
 
 <p align="center">
@@ -26,24 +26,27 @@
 
 ## Why this workflow
 
-- **Daily schedule with an explicit timezone.** A manual trigger makes setup testable. The included Schedule Trigger is set to **08:00** but stays inactive. Before enabling it, explicitly choose the workflow timezone and verify what 08:00 means in that timezone.
-- **Incremental by design.** Each run searches a recent window, deduplicates by LinkedIn job `id`, and appends only unseen rows.
-- **Stable first-seen data.** Existing rows are not rewritten, so `firstSeenAt` remains the timestamp when that job first entered your sheet.
-- **Small dependency surface.** The original Header Auth workflow and CLI use built-in nodes or runtime-standard features. The Cloud auto-setup variant additionally requires the official `@apify/n8n-nodes-apify` community package so HTTP Request nodes can use its Apify OAuth credential.
+- **Daily schedule.** Review the timezone, then enable the inactive 08:00 schedule after a passing test.
+- **Skip duplicates.** Deduplicate by LinkedIn job `id` so only unseen roles are appended.
+- **Keep `firstSeenAt`.** Existing rows stay unchanged, preserving first-seen history.
 
 ## Install to n8n Cloud
 
-Use the hosted installer on the **[MEKA n8n hub](https://meka.im/n8n/linkedin-jobs-to-google-sheets)**. It uses n8n's official MCP server with `workflow:read`, `workflow:write`, `credential:read`, `workflow:execute`, and `execution:read`. The last two are needed only for the explicit two-account check and the user-confirmed small test; n8n grants those capabilities across the selected workspace, so the product limits every execution to a reviewed inactive workflow and the Manual Trigger.
+The [hosted installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets) helps you configure and test this workflow with your own n8n, Apify, and Google accounts; it does not bypass account setup or provider authorization.
 
-1. **Enable MCP and connect accounts.** In n8n, enable **Settings → MCP**, then connect your own managed Apify OAuth and Google Sheets OAuth credentials. Set their **Allowed HTTP Request Domains** to `api.apify.com` and `www.googleapis.com,sheets.googleapis.com` respectively.
-2. **Choose the connections and search.** Enter your workspace in the installer, review and authorize the five installer scopes, select one credential of each type, and set keywords, location, and any advanced limits.
-3. **Check both accounts.** Start the explicit account check. It creates or reuses one uniquely named inactive helper workflow that performs read-only Apify and Google metadata requests. A credential appearing in n8n is not treated as connected until both checks pass.
-4. **Install and open.** Click **Install inactive workflow** once. The installer reads back and structure-checks the complete 42-node, 40-connection, 15-binding template. Success is **Installed · Test required**, not verified.
-5. **Run one confirmed small test when ready.** The installer rechecks the graph and version, runs the Manual Trigger once, reads the linked execution and a sanitized summary, then verifies the new rows in Google Sheets. Only complete, unchanged, fully verified evidence shows **Test passed**.
+1. **Connect n8n.** Enable MCP for the selected workspace, enter its URL, review the five scopes, and authorize the installer.
+2. **Connect Apify.** Select an Apify OAuth credential that allows HTTP Request domain `api.apify.com`, then pass the real API check.
+3. **Connect Google.** Select a Google Sheets OAuth credential that allows `www.googleapis.com,sheets.googleapis.com`, then pass the real read check.
+4. **Search jobs.** Set keywords and location, then review the date window, result limit, and budget.
+5. **Name spreadsheet.** Choose a title; the confirmed test creates or reuses its tagged `Jobs` worksheet.
+6. **Review and install.** Review the settings and click **Install inactive workflow** once; success remains **Installed · Test required** until the test passes.
+7. **Run bounded test.** Confirm and run the Manual Trigger once, verify the execution and rows, then review the schedule before enabling it.
 
-Installation itself does not run the paid Actor, create a spreadsheet, publish, or activate the schedule. The explicitly confirmed test may create or reuse the tagged spreadsheet and incur up to **USD 0.05** in Apify charges. This is a cap, not a fixed charge; actual usage may be lower. Every Manual Trigger run is limited to 10 fetched jobs, a positive budget no greater than USD 0.05, and no company enrichment. Scheduled runs use the separate saved budget, which defaults to USD 1. The schedule remains inactive until the user reviews a green result and enables it personally.
+- **Credentials and session.** Apify and Google keys stay in n8n; MEKA temporarily relays your n8n token without storing it. Closing the tab ends the MEKA session but does not revoke authorization or stop an active schedule; see [permissions and security](docs/installer.md#oauth-and-mcp-endpoints).
+- **Manual test and schedule.** Up to 10 fetched jobs and $0.05 in Actor charges, with company enrichment and the schedule off; the saved schedule defaults to a $1 budget per run, not a cumulative cap.
+- **Apify pricing.** The Free plan includes $5 per month in account-wide usage credits; see [Apify pricing](https://apify.com/pricing).
 
-An isolated 2026-10-27 preview verified both account checks and actual Google Sheets write/readback. The final artifact then passed a complete live acceptance with zero failed counters and a 110-cell independent Sheet match; see the [sanitized acceptance details](validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json).
+See the [sanitized 2026-10-27 acceptance evidence](validation/2026-10-27/meka-n8n-onboarding-acceptance-safe.json).
 
 ### Manual JSON fallback
 

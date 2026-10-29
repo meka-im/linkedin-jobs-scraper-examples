@@ -45,28 +45,44 @@ snapshot, not a performance promise.
 
 ## Start here
 
-1. In your n8n Cloud workspace, enable **Settings → MCP** and connect your own
-   Apify OAuth and Google Sheets OAuth credentials.
-2. In the Apify credential, allow HTTP Request domain `api.apify.com`. In the
-   Google credential, allow
-   `www.googleapis.com,sheets.googleapis.com`. Keep **All** unselected.
-3. Open the [MEKA n8n hub installer](https://meka.im/n8n/linkedin-jobs-to-google-sheets),
-   enter the workspace,
-   review and authorize `workflow:read`, `workflow:write`, `credential:read`,
-   `workflow:execute`, and `execution:read`, then choose one credential of each
-   type and your search settings.
-4. Click the explicit account-check button. Both the Apify API identity check
-   and the Google read probe must pass before installation is enabled.
-5. Click **Install inactive workflow** once. Success is
-   **Installed · Test required**; the structure-only graph readback is not
-   connection or execution proof.
-6. When ready, tick the bounded-test confirmation and run the small test once.
-   Green **Test passed** requires matched execution evidence and independent
-   Sheet row verification.
+The hub helps you configure and test the workflow in your own n8n workspace; it
+does not bypass n8n, Apify, or Google authorization.
+
+1. **Connect n8n.** Enable MCP for the selected workspace, enter its URL, review
+   workspace-wide authorization for `workflow:read`, `workflow:write`,
+   `credential:read`, `workflow:execute`, and `execution:read`, then authorize
+   the installer.
+2. **Connect Apify.** Select an Apify OAuth credential that allows HTTP Request
+   domain `api.apify.com`, then pass the real API check.
+3. **Connect Google.** Select a Google Sheets OAuth credential that allows
+   `www.googleapis.com,sheets.googleapis.com`, then pass the real read check.
+4. **Search jobs.** Set keywords and location, then review the date window,
+   result limit, and budget.
+5. **Name spreadsheet.** Choose a title; the confirmed test creates or reuses
+   its tagged `Jobs` worksheet.
+6. **Review and install.** Review the settings and click **Install inactive
+   workflow** once; success remains **Installed · Test required** until the test
+   passes.
+7. **Run bounded test.** Confirm and run the Manual Trigger once, verify the
+   execution and rows, then review the schedule before enabling it.
 
 The resulting workflow is inactive. Installation does not run the paid Actor,
 create a spreadsheet, publish, or activate the schedule. The user-confirmed test
 may create or reuse the spreadsheet and call Apify.
+
+### Costs and session
+
+- The manual test is capped at 10 fetched jobs and $0.05 in Actor charges, with
+  company enrichment off and the schedule off. The saved schedule's default
+  budget is $1 per run, not a cumulative cap.
+- [Apify's Free plan](https://apify.com/pricing) includes $5 in monthly usage
+  credits shared by the account, not dedicated to this workflow; this is not a
+  permanent-free promise.
+- Apify and Google secrets stay in n8n. The n8n token stays in tab memory and is
+  transiently relayed by MEKA during setup, account checks, and the explicit
+  confirmed test without being stored.
+- Closing the tab ends the temporary MEKA session, but does not revoke
+  authorization, delete the workflow or sheet, or stop an active schedule.
 
 ## What it does
 
@@ -199,10 +215,10 @@ same-origin MEKA installer relay described below. The browser and relay do not
 place it in a URL, DOM text, local storage, or long-term session storage, and
 the installer application does not log it.
 
-The relay handles MCP calls during installation only and does not persist the
-n8n access token. Apify and Google OAuth secrets remain in the user's n8n
-credentials; the installer reads only credential metadata and does not export
-or change those secrets.
+The relay handles MCP calls during setup, account checks, and the explicit
+confirmed test only, and does not persist the n8n access token. Apify and Google
+OAuth secrets remain in the user's n8n credentials; the installer reads only
+credential metadata and does not export or change those secrets.
 
 The OAuth state is random and single use with a ten-minute lifetime. The PKCE
 verifier, state, workspace origin, registration metadata, and redirect URI are
